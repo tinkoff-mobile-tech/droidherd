@@ -1,0 +1,24 @@
+apiVersion: testops.tinkoff.ru/v1
+kind: DroidherdSession
+metadata:
+  name: "{{Name}}"
+  labels:
+    droidherdId: "{{Name}}"
+    droidherdClientId: "{{ClientId}}"
+    droidherdSessionId: "{{SessionId}}"
+spec:
+  client:
+    ci:
+      jobUrl: "{{ciJobUrl}}"
+      name: "{{ciName}}"
+      reference: "{{ciReference}}"
+      repository: "{{ciRepository}}"
+      triggeredBy: "{{ciTriggeredBy}}"
+    id: {{ClientId}}
+    info: {{ClientInfo}}
+    ip: {{ClientIp}}
+    version: {{ClientVersion}}
+  sessionId: {{SessionId}}
+  isDebug: {{IsDebug}}
+  emulators: []
+  parameters: []

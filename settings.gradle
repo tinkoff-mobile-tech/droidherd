@@ -1,0 +1,21 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+buildscript {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath "io.spring.dependency-management:io.spring.dependency-management.gradle.plugin:1.0.11.RELEASE"
+    }
+}
+
+rootProject.name = "$projectName"
+
+include ':app', ':api', ':auth', ':basic-auth', ':crd-model'

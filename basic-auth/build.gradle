@@ -1,0 +1,19 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm'
+    id "org.jetbrains.kotlin.plugin.allopen" version "$kotlinVersion"
+}
+
+dependencies {
+    implementation project(':auth')
+    implementation('org.springframework.boot:spring-boot-starter')
+    implementation 'org.slf4j:slf4j-api'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core'
+    implementation 'com.typesafe:config'
+    implementation 'io.github.config4k:config4k'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+}
+
+test {
+    useJUnitPlatform()
+}

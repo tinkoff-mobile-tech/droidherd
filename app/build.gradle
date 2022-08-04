@@ -1,0 +1,50 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm'
+    id 'org.springframework.boot' version "$springBootVersion"
+}
+
+dependencies {
+    implementation project(':api')
+    implementation project(':crd-model')
+    implementation project(':auth')
+    implementation project(':basic-auth')
+
+    implementation('org.springframework.boot:spring-boot-starter-web') {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+    }
+    implementation 'org.springframework.boot:spring-boot-starter-undertow'
+
+    implementation 'io.kubernetes:client-java'
+    implementation 'io.kubernetes:client-java-extended'
+    implementation 'io.kubernetes:client-java-spring-integration'
+
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.security:spring-security-core'
+
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+
+    implementation 'org.zalando:logbook-spring-boot-starter'
+    implementation 'org.zalando:logbook-logstash'
+
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core'
+    implementation 'com.typesafe:config'
+    implementation 'io.github.config4k:config4k'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    implementation 'com.hubspot.jinjava:jinjava'
+
+    testImplementation 'io.kotest:kotest-assertions-core-jvm'
+    testImplementation 'io.mockk:mockk'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+bootJar {
+    archiveFileName = 'droidherd-service.jar'
+}

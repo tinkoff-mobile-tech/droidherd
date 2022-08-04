@@ -1,0 +1,5 @@
+dependencies {
+    implementation 'io.kubernetes:client-java'
+    implementation 'io.kubernetes:client-java-extended'
+    implementation 'io.kubernetes:client-java-spring-integration'
+}

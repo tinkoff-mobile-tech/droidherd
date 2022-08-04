@@ -1,0 +1,13 @@
+apply plugin: "java-library"
+apply plugin: "maven-publish"
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'ru.tinkoff.testops.droidherd'
+            artifactId = 'api'
+            version = this.version.toString()
+            from components.java
+        }
+    }
+}

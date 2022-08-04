@@ -1,0 +1,58 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "$kotlinVersion" apply false
+}
+
+allprojects {
+    group = "$packageGroup"
+    version = System.getenv("BUILD_VERSION") ?: "DEV-SNAPSHOT"
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
+
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of("$projectJavaVersion"))
+        }
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion"
+            mavenBom "org.zalando:logbook-bom:$logbookVersion"
+        }
+
+        dependencies {
+            dependency "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+            dependency "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinVersion"
+            dependency "org.springdoc:springdoc-openapi-ui:$springDocVersion"
+            dependency "org.springframework.boot:spring-boot-starter:$springBootVersion"
+            dependency "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+            dependency "com.typesafe:config:$typesafeVersion"
+            dependency "io.github.config4k:config4k:$config4kVersion"
+            dependency "com.github.ben-manes.caffeine:caffeine:$caffeineVersion"
+            dependency "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
+            dependency "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion"
+            dependency "org.slf4j:slf4j-api:$slf4jVersion"
+            dependency "io.mockk:mockk:$mockkVersion"
+            dependency "io.kotest:kotest-assertions-core-jvm:$kotestVersion"
+            dependency "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
+            dependency "org.junit.jupiter:junit-jupiter-api:$junitVersion"
+            dependency "org.springframework.security:spring-security-core:$springSecurityVersion"
+            dependency "org.springframework:spring-context:$springContextVersion"
+            dependency "com.hubspot.jinjava:jinjava:$jinjavaVersion"
+            dependency "io.kubernetes:client-java:$kubernetesVersion"
+            dependency "io.kubernetes:client-java-extended:$kubernetesVersion"
+            dependency "io.kubernetes:client-java-spring-integration:$kubernetesVersion"
+        }
+    }
+}
