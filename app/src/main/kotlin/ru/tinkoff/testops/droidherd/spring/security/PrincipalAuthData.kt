@@ -1,3 +1,3 @@
-package ru.tinkoff.testops.droidherd.auth
+package ru.tinkoff.testops.droidherd.spring.security
 
 class PrincipalAuthData(val asAnotherClient: String?)

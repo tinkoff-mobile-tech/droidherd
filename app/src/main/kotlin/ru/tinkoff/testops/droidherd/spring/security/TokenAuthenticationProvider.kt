@@ -8,7 +8,6 @@ import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
 import ru.tinkoff.testops.droidherd.auth.AuthData
 import ru.tinkoff.testops.droidherd.auth.AuthService
-import ru.tinkoff.testops.droidherd.auth.PrincipalAuthData
 import ru.tinkoff.testops.droidherd.auth.UnauthorizedException
 import ru.tinkoff.testops.droidherd.service.configs.DroidherdConfig
 
