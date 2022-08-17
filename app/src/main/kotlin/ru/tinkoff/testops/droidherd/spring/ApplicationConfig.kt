@@ -10,12 +10,12 @@ import io.kubernetes.client.informer.SharedIndexInformer
 import io.kubernetes.client.informer.SharedInformerFactory
 import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.openapi.apis.CoreV1Api
-import io.kubernetes.client.openapi.models.V1Pod
-import io.kubernetes.client.openapi.models.V1Service
+import io.kubernetes.client.openapi.models.*
 import io.prometheus.client.CollectorRegistry
 import org.springframework.boot.ApplicationRunner
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import ru.tinkoff.testops.droidherd.DroidherdCrdFileProvider
 import ru.tinkoff.testops.droidherd.models.V1DroidherdSession
 import ru.tinkoff.testops.droidherd.service.DroidherdOperator
 import ru.tinkoff.testops.droidherd.service.DroidherdService
@@ -70,7 +70,8 @@ open class ApplicationConfig {
     ): SharedIndexInformer<V1DroidherdSession> {
         // use custom ListerWatcher to be able setup exceptionHandler
         return sharedInformerFactory.sharedIndexInformerFor(
-            listerWatcher, V1DroidherdSession::class.java, 0, exceptionHandler)
+            listerWatcher, V1DroidherdSession::class.java, 0, exceptionHandler
+        )
     }
 
     @Bean
@@ -191,11 +192,24 @@ open class ApplicationConfig {
         coreV1Api: CoreV1Api,
         sessionIndexInformer: SharedIndexInformer<V1DroidherdSession>,
         podIndexInformer: SharedIndexInformer<V1Pod>,
-        serviceIndexInformer: SharedIndexInformer<V1Service>
+        serviceIndexInformer: SharedIndexInformer<V1Service>,
+        apiClient: ApiClient,
+        crdFileProvider: DroidherdCrdFileProvider
     ) = KubeClient(
-        droidherdConfig, droidherdSessionApi, coreV1Api, sessionIndexInformer, podIndexInformer, serviceIndexInformer
+        droidherdConfig,
+        droidherdSessionApi,
+        coreV1Api,
+        sessionIndexInformer,
+        podIndexInformer,
+        serviceIndexInformer,
+        crdFileProvider
     ).also {
-        it.dryRun()
+        if (droidherdConfig.applyCrdAtStartup) {
+            it.applyCrd(droidherdConfig, apiClient)
+        }
+        if (droidherdConfig.dryRun) {
+            it.dryRun()
+        }
     }
 
     @Bean
@@ -215,5 +229,8 @@ open class ApplicationConfig {
             quotaService,
             collectorRegistry
         ).apply { init() }
+
+    @Bean
+    open fun crdFileProvider() = DroidherdCrdFileProvider()
 }
 

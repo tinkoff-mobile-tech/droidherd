@@ -1,5 +1,10 @@
 package ru.tinkoff.testops.droidherd.spring.controller
 
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.tags.Tag
+import io.swagger.v3.oas.annotations.tags.Tags
 import org.slf4j.LoggerFactory
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
@@ -14,13 +19,16 @@ import javax.servlet.ServletRequest
 
 @RestController
 @RequestMapping("api/v1")
+@Tags(Tag(name = "RestApiV1Controller", description = "for clients authenticated via basic auth"))
+@SecurityRequirement(name = "basicAuth")
 class RestApiV1Controller(private val droidherdService: DroidherdService) {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
+    @Operation(summary = "Create new session")
     @PostMapping("/clients/{clientId}/login")
     fun login(
-        @AuthenticationPrincipal authDetails: DroidherdAuthDetails,
+        @AuthenticationPrincipal @Parameter(hidden = true) authDetails: DroidherdAuthDetails,
         @PathVariable clientId: String
     ): Session {
         validateClient(authDetails, clientId)
@@ -33,9 +41,10 @@ class RestApiV1Controller(private val droidherdService: DroidherdService) {
         return session
     }
 
+    @Operation(summary = "Get status")
     @GetMapping("/clients/{clientId}/sessions/{sessionId}")
     fun getSessionStatus(
-        @AuthenticationPrincipal authDetails: DroidherdAuthDetails,
+        @AuthenticationPrincipal @Parameter(hidden = true) authDetails: DroidherdAuthDetails,
         @PathVariable clientId: String,
         @PathVariable sessionId: String
     ): DroidherdSessionStatus {
@@ -45,9 +54,10 @@ class RestApiV1Controller(private val droidherdService: DroidherdService) {
         return droidherdService.getSessionStatus(session)
     }
 
+    @Operation(summary = "Get status")
     @GetMapping("/clients/{clientId}/sessions")
     fun getClientStatus(
-        @AuthenticationPrincipal authDetails: DroidherdAuthDetails,
+        @AuthenticationPrincipal @Parameter(hidden = true) authDetails: DroidherdAuthDetails,
         @PathVariable clientId: String,
     ): DroidherdClientStatus {
         validateClient(authDetails, clientId)
@@ -55,9 +65,10 @@ class RestApiV1Controller(private val droidherdService: DroidherdService) {
         return droidherdService.getClientStatus(authDetails.clientId)
     }
 
+    @Operation(summary = "Request emulators")
     @PostMapping("/clients/{clientId}/sessions/{sessionId}")
     fun requestEmulators(
-        @AuthenticationPrincipal authDetails: DroidherdAuthDetails,
+        @AuthenticationPrincipal @Parameter(hidden = true) authDetails: DroidherdAuthDetails,
         @PathVariable clientId: String,
         @PathVariable sessionId: String,
         @RequestBody requests: SessionRequest,
@@ -75,9 +86,10 @@ class RestApiV1Controller(private val droidherdService: DroidherdService) {
         return droidherdService.requestEmulators(request)
     }
 
+    @Operation(summary = "Release specified session")
     @DeleteMapping("/clients/{clientId}/sessions/{sessionId}")
     fun releaseSession(
-        @AuthenticationPrincipal authDetails: DroidherdAuthDetails,
+        @AuthenticationPrincipal @Parameter(hidden = true) authDetails: DroidherdAuthDetails,
         @PathVariable clientId: String,
         @PathVariable sessionId: String,
     ) {
@@ -87,9 +99,10 @@ class RestApiV1Controller(private val droidherdService: DroidherdService) {
         droidherdService.release(session)
     }
 
+    @Operation(summary = "Release all sessions")
     @DeleteMapping("/clients/{clientId}/sessions")
     fun releaseAllSessions(
-        @AuthenticationPrincipal authDetails: DroidherdAuthDetails,
+        @AuthenticationPrincipal @Parameter(hidden = true) authDetails: DroidherdAuthDetails,
         @PathVariable clientId: String
     ) {
         validateClient(authDetails, clientId)
@@ -97,9 +110,10 @@ class RestApiV1Controller(private val droidherdService: DroidherdService) {
         droidherdService.releaseAll(authDetails.clientId)
     }
 
+    @Operation(summary = "Accept ping from client (keep-alive functionality)")
     @PostMapping("/clients/{clientId}/sessions/{sessionId}/ping")
     fun ping(
-        @AuthenticationPrincipal authDetails: DroidherdAuthDetails,
+        @AuthenticationPrincipal @Parameter(hidden = true) authDetails: DroidherdAuthDetails,
         @PathVariable sessionId: String,
         @PathVariable clientId: String,
     ) {
@@ -109,9 +123,10 @@ class RestApiV1Controller(private val droidherdService: DroidherdService) {
         droidherdService.ping(session)
     }
 
+    @Operation(summary = "Post metrics collected by client")
     @PostMapping("/clients/{clientId}/sessions/{sessionId}/metrics")
     fun postMetrics(
-        @AuthenticationPrincipal authDetails: DroidherdAuthDetails,
+        @AuthenticationPrincipal @Parameter(hidden = true) authDetails: DroidherdAuthDetails,
         @PathVariable sessionId: String,
         @PathVariable clientId: String,
         @RequestBody metrics: List<DroidherdClientMetric>,
