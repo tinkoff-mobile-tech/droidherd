@@ -1,17 +1,17 @@
 package ru.tinkoff.testops.droidherd.service.kubernetes
 
 import com.hubspot.jinjava.Jinjava
+import io.kubernetes.client.extended.kubectl.Kubectl
 import io.kubernetes.client.informer.SharedIndexInformer
+import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.openapi.apis.CoreV1Api
-import io.kubernetes.client.openapi.models.V1EnvVar
-import io.kubernetes.client.openapi.models.V1ObjectMeta
-import io.kubernetes.client.openapi.models.V1Pod
-import io.kubernetes.client.openapi.models.V1Service
+import io.kubernetes.client.openapi.models.*
 import io.kubernetes.client.util.Yaml
 import io.kubernetes.client.util.generic.KubernetesApiResponse
 import io.kubernetes.client.util.generic.options.CreateOptions
 import io.kubernetes.client.util.generic.options.ListOptions
 import org.slf4j.LoggerFactory
+import ru.tinkoff.testops.droidherd.CRDProducer
 import ru.tinkoff.testops.droidherd.api.*
 import ru.tinkoff.testops.droidherd.models.V1DroidherdSession
 import ru.tinkoff.testops.droidherd.models.V1DroidherdSessionSpecEmulators
@@ -29,7 +29,8 @@ class KubeClient(
     private val coreApi: CoreV1Api,
     private val sessionIndexInformer: SharedIndexInformer<V1DroidherdSession>,
     private val podIndexInformer: SharedIndexInformer<V1Pod>,
-    private val serviceIndexInformer: SharedIndexInformer<V1Service>
+    private val serviceIndexInformer: SharedIndexInformer<V1Service>,
+    private val crdProducer: CRDProducer
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -67,6 +68,18 @@ class KubeClient(
                 e
             )
         }
+    }
+
+    fun applyCrd(config: DroidherdConfig, apiClient: ApiClient) {
+        val crdFile = crdProducer.produceCRDFile()
+        val crd = Yaml.loadAs(crdFile, V1CustomResourceDefinition::class.java)
+        Kubectl.apply(V1CustomResourceDefinition::class.java)
+            .fieldManager("java-kubectl")
+            .forceConflict(true)
+            .apiClient(apiClient)
+            .resource(crd)
+            .namespace(config.namespace)
+            .execute()
     }
 
     fun create(request: EmulatorsRequestData) = create(request, null)

@@ -5,14 +5,12 @@ import io.github.config4k.extract
 import io.kubernetes.client.extended.controller.Controller
 import io.kubernetes.client.extended.controller.builder.ControllerBuilder
 import io.kubernetes.client.extended.controller.reconciler.Request
-import io.kubernetes.client.extended.kubectl.Kubectl
 import io.kubernetes.client.extended.workqueue.WorkQueue
 import io.kubernetes.client.informer.SharedIndexInformer
 import io.kubernetes.client.informer.SharedInformerFactory
 import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.openapi.apis.CoreV1Api
 import io.kubernetes.client.openapi.models.*
-import io.kubernetes.client.util.Yaml
 import io.prometheus.client.CollectorRegistry
 import org.springframework.boot.ApplicationRunner
 import org.springframework.context.annotation.Bean
@@ -72,7 +70,8 @@ open class ApplicationConfig {
     ): SharedIndexInformer<V1DroidherdSession> {
         // use custom ListerWatcher to be able setup exceptionHandler
         return sharedInformerFactory.sharedIndexInformerFor(
-            listerWatcher, V1DroidherdSession::class.java, 0, exceptionHandler)
+            listerWatcher, V1DroidherdSession::class.java, 0, exceptionHandler
+        )
     }
 
     @Bean
@@ -197,10 +196,16 @@ open class ApplicationConfig {
         apiClient: ApiClient,
         crdProducer: CRDProducer
     ) = KubeClient(
-        droidherdConfig, droidherdSessionApi, coreV1Api, sessionIndexInformer, podIndexInformer, serviceIndexInformer
+        droidherdConfig,
+        droidherdSessionApi,
+        coreV1Api,
+        sessionIndexInformer,
+        podIndexInformer,
+        serviceIndexInformer,
+        crdProducer
     ).also {
         if (droidherdConfig.applyCrdAtStartup) {
-            applyCrd(crdProducer, droidherdConfig, apiClient)
+            it.applyCrd(droidherdConfig, apiClient)
         }
         if (droidherdConfig.dryRun) {
             it.dryRun()
@@ -227,17 +232,5 @@ open class ApplicationConfig {
 
     @Bean
     open fun crdProducer() = CRDProducer()
-
-    private fun applyCrd(crdProducer: CRDProducer, config: DroidherdConfig, apiClient: ApiClient) {
-        val crdFile = crdProducer.produceCRDFile()
-        val crd = Yaml.loadAs(crdFile, V1CustomResourceDefinition::class.java)
-        Kubectl.apply(V1CustomResourceDefinition::class.java)
-            .fieldManager("java-kubectl")
-            .forceConflict(true)
-            .apiClient(apiClient)
-            .resource(crd)
-            .namespace(config.namespace)
-            .execute()
-    }
 }
 
