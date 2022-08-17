@@ -11,7 +11,7 @@ import io.kubernetes.client.util.generic.KubernetesApiResponse
 import io.kubernetes.client.util.generic.options.CreateOptions
 import io.kubernetes.client.util.generic.options.ListOptions
 import org.slf4j.LoggerFactory
-import ru.tinkoff.testops.droidherd.CRDProducer
+import ru.tinkoff.testops.droidherd.DroidherdCrdFileProvider
 import ru.tinkoff.testops.droidherd.api.*
 import ru.tinkoff.testops.droidherd.models.V1DroidherdSession
 import ru.tinkoff.testops.droidherd.models.V1DroidherdSessionSpecEmulators
@@ -30,7 +30,7 @@ class KubeClient(
     private val sessionIndexInformer: SharedIndexInformer<V1DroidherdSession>,
     private val podIndexInformer: SharedIndexInformer<V1Pod>,
     private val serviceIndexInformer: SharedIndexInformer<V1Service>,
-    private val crdProducer: CRDProducer
+    private val crdFileProvider: DroidherdCrdFileProvider
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -71,7 +71,7 @@ class KubeClient(
     }
 
     fun applyCrd(config: DroidherdConfig, apiClient: ApiClient) {
-        val crdFile = crdProducer.produceCRDFile()
+        val crdFile = crdFileProvider.provide()
         val crd = Yaml.loadAs(crdFile, V1CustomResourceDefinition::class.java)
         Kubectl.apply(V1CustomResourceDefinition::class.java)
             .fieldManager("java-kubectl")

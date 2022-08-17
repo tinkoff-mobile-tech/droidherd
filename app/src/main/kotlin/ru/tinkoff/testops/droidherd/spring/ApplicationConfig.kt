@@ -15,7 +15,7 @@ import io.prometheus.client.CollectorRegistry
 import org.springframework.boot.ApplicationRunner
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import ru.tinkoff.testops.droidherd.CRDProducer
+import ru.tinkoff.testops.droidherd.DroidherdCrdFileProvider
 import ru.tinkoff.testops.droidherd.models.V1DroidherdSession
 import ru.tinkoff.testops.droidherd.service.DroidherdOperator
 import ru.tinkoff.testops.droidherd.service.DroidherdService
@@ -194,7 +194,7 @@ open class ApplicationConfig {
         podIndexInformer: SharedIndexInformer<V1Pod>,
         serviceIndexInformer: SharedIndexInformer<V1Service>,
         apiClient: ApiClient,
-        crdProducer: CRDProducer
+        crdFileProvider: DroidherdCrdFileProvider
     ) = KubeClient(
         droidherdConfig,
         droidherdSessionApi,
@@ -202,7 +202,7 @@ open class ApplicationConfig {
         sessionIndexInformer,
         podIndexInformer,
         serviceIndexInformer,
-        crdProducer
+        crdFileProvider
     ).also {
         if (droidherdConfig.applyCrdAtStartup) {
             it.applyCrd(droidherdConfig, apiClient)
@@ -231,6 +231,6 @@ open class ApplicationConfig {
         ).apply { init() }
 
     @Bean
-    open fun crdProducer() = CRDProducer()
+    open fun crdFileProvider() = DroidherdCrdFileProvider()
 }
 
