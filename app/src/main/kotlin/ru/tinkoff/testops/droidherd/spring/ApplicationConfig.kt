@@ -17,7 +17,7 @@ import io.prometheus.client.CollectorRegistry
 import org.springframework.boot.ApplicationRunner
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import ru.tinkoff.testops.droidherd.CRDModelConfig
+import ru.tinkoff.testops.droidherd.CRDProducer
 import ru.tinkoff.testops.droidherd.models.V1DroidherdSession
 import ru.tinkoff.testops.droidherd.service.DroidherdOperator
 import ru.tinkoff.testops.droidherd.service.DroidherdService
@@ -194,12 +194,13 @@ open class ApplicationConfig {
         sessionIndexInformer: SharedIndexInformer<V1DroidherdSession>,
         podIndexInformer: SharedIndexInformer<V1Pod>,
         serviceIndexInformer: SharedIndexInformer<V1Service>,
-        apiClient: ApiClient
+        apiClient: ApiClient,
+        crdProducer: CRDProducer
     ) = KubeClient(
         droidherdConfig, droidherdSessionApi, coreV1Api, sessionIndexInformer, podIndexInformer, serviceIndexInformer
     ).also {
         if (droidherdConfig.applyCrdAtStartup) {
-            applyCrd(droidherdConfig, apiClient)
+            applyCrd(crdProducer, droidherdConfig, apiClient)
         }
         if (droidherdConfig.dryRun) {
             it.dryRun()
@@ -224,8 +225,11 @@ open class ApplicationConfig {
             collectorRegistry
         ).apply { init() }
 
-    private fun applyCrd(config: DroidherdConfig, apiClient: ApiClient) {
-        val crdFile = CRDModelConfig.getCrdFile()
+    @Bean
+    open fun crdProducer() = CRDProducer()
+
+    private fun applyCrd(crdProducer: CRDProducer, config: DroidherdConfig, apiClient: ApiClient) {
+        val crdFile = crdProducer.produceCRDFile()
         val crd = Yaml.loadAs(crdFile, V1CustomResourceDefinition::class.java)
         Kubectl.apply(V1CustomResourceDefinition::class.java)
             .fieldManager("java-kubectl")
