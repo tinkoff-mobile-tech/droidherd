@@ -25,7 +25,10 @@ open class WebSecurityConfig(private val provider: TokenAuthenticationProvider) 
     companion object {
         private val PUBLIC_URLS: RequestMatcher = OrRequestMatcher(
             AntPathRequestMatcher("/api/public/**"),
-            AntPathRequestMatcher("/system/**")
+            AntPathRequestMatcher("/system/**"),
+            AntPathRequestMatcher("/v3/api-docs/**"),
+            AntPathRequestMatcher("/swagger-ui/**"),
+            AntPathRequestMatcher("/swagger-ui.html")
         )
         private val PROTECTED_URLS: RequestMatcher = NegatedRequestMatcher(PUBLIC_URLS)
         private val SUPERUSER_URLS: RequestMatcher = OrRequestMatcher(AntPathRequestMatcher("/api/internal/**"))

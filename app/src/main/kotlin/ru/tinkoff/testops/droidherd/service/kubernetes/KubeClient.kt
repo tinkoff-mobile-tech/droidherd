@@ -178,7 +178,7 @@ class KubeClient(
 
         return coreApi.createNamespacedPod(
             config.namespace, pod,
-            config.pretty, config.dryRun,
+            config.pretty, null,
             config.fieldManager, config.fieldValidation
         )
     }
@@ -188,7 +188,7 @@ class KubeClient(
         log.debug("creating service {}", service)
         return coreApi.createNamespacedService(
             config.namespace, service,
-            config.pretty, config.dryRun,
+            config.pretty, null,
             config.fieldManager, config.fieldValidation
         )
     }
@@ -196,7 +196,7 @@ class KubeClient(
     fun deletePodsWithLabel(label: String) {
         coreApi.deleteCollectionNamespacedPod(
             config.namespace, config.pretty, null,
-            config.dryRun, null, config.gracePeriodSeconds,
+            null, null, config.gracePeriodSeconds,
             label, null,
             config.orphanDependents, config.propagationPolicy, null,
             null, null, null
@@ -206,7 +206,7 @@ class KubeClient(
     fun deleteServicesWithLabel(label: String) {
         coreApi.deleteCollectionNamespacedService(
             config.namespace, config.pretty, null,
-            config.dryRun, null, config.gracePeriodSeconds,
+            null, null, config.gracePeriodSeconds,
             label, null,
             config.orphanDependents, config.propagationPolicy, null,
             null, null, null
