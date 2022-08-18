@@ -79,12 +79,13 @@ class KubeServiceImpl(
 
         val podImage = pod.metadata?.labels?.get("image")
         if (podImage == null) {
-            log.error("Emulator pod $droidherdId doesn't have image label. Can't map to emulator.")
+            log.warn("Emulator pod $droidherdId doesn't have image label. Can't map to emulator.")
             return null
         }
         val hostIp = pod.status?.hostIP
         if (hostIp == null) {
-            log.error("Pod $droidherdId doesn't have hostIp. Can't map to emulator.")
+            log.warn("Pod $droidherdId doesn't have hostIp. Can't map to emulator.")
+            return null
         }
 
         return V1DroidherdSessionStatusEmulators().apply {
