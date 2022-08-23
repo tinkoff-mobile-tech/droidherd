@@ -32,7 +32,7 @@ class DroidherdOperator(
 
     private val resultRequeueAfterTimeout = Result(true, Duration.ofSeconds(config.requeueAfterSeconds))
 
-    private val apiCallsChannel: Channel<() -> Unit> = Channel()
+    private val apiCallsChannel: Channel<() -> Unit> = Channel(Channel.UNLIMITED)
 
     private val emulatorsAllocationFailedTotal = Counter.build()
         .name("emulators_allocation_failed_total")
@@ -141,10 +141,7 @@ class DroidherdOperator(
     ): Boolean {
         val isStatusSame = (emulatorsInStatus.size == runningEmulators.size)
             && emulatorsInStatus.containsAll(runningEmulators)
-        if (isStatusSame) {
-            return false
-        }
-        return true
+        return !isStatusSame
     }
 
     private fun createEmulators(resource: DroidherdResource, runningEmulatorsIds: Set<String>) {
