@@ -10,4 +10,15 @@ publishing {
             from components.java
         }
     }
+    repositories {
+        maven {
+            def stub = "https://nexus-stub.com"
+            url = version.toString().endsWith("SNAPSHOT") ? uri(System.getenv("MVN_SNAPSHOT_REPOSITORY") ?: stub)
+                : uri(System.getenv("MVN_RELEASE_REPOSITORY") ?: stub)
+            credentials {
+                username = System.getenv("MVN_LOGIN")
+                password = System.getenv("MVN_PASSWORD")
+            }
+        }
+    }
 }

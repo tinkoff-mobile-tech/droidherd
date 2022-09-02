@@ -1,0 +1,147 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: droidherdsessions.testops.tinkoff.ru
+spec:
+  group: testops.tinkoff.ru
+  names:
+    kind: DroidherdSession
+    listKind: DroidherdSessionList
+    plural: droidherdsessions
+    singular: droidherdsession
+  scope: Namespaced
+  versions:
+    - name: v1
+      schema:
+        openAPIV3Schema:
+          description: DroidherdSession is the Schema for the droidherdsessions API
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: DroidherdSessionSpec defines the desired state of DroidherdSession
+              properties:
+                sessionId:
+                  type: string
+                isDebug:
+                  type: boolean
+                client:
+                  properties:
+                    id:
+                      type: string
+                    info:
+                      type: string
+                    ip:
+                      type: string
+                    version:
+                      type: string
+                    ci:
+                      properties:
+                        name:
+                          type: string
+                        repository:
+                          type: string
+                        triggeredBy:
+                          type: string
+                        reference:
+                          type: string
+                        jobUrl:
+                          type: string
+                      type: object
+                  required:
+                    - id
+                    - ip
+                    - version
+                  type: object
+                emulators:
+                  items:
+                    properties:
+                      image:
+                        type: string
+                      quantity:
+                        type: integer
+                    required:
+                      - image
+                      - quantity
+                    type: object
+                  type: array
+                parameters:
+                  items:
+                    properties:
+                      name:
+                        type: string
+                      value:
+                        type: string
+                    required:
+                      - name
+                      - value
+                    type: object
+                  type: array
+              required:
+                - client
+                - emulators
+              type: object
+            status:
+              description: DroidherdSessionStatus defines the observed state of DroidherdSession
+              properties:
+                emulators:
+                  description: 'Allocated emulators'
+                  items:
+                    properties:
+                      ready:
+                        type: boolean
+                      adb:
+                        type: string
+                      id:
+                        type: string
+                      image:
+                        type: string
+                      extraUris:
+                        items:
+                          properties:
+                            name:
+                              type: string
+                            uri:
+                              type: string
+                          required:
+                            - name
+                            - value
+                          type: object
+                        type: array
+                    required:
+                      - ready
+                      - adb
+                      - id
+                      - image
+                    type: object
+                  type: array
+                lastSeen:
+                  type: string
+              required:
+                - emulators
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
