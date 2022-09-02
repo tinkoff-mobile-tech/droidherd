@@ -39,27 +39,15 @@ spec:
               fieldPath: status.podIP
         - name: EMULATOR_ARGS
           value: "{{EmulatorArgs}}"
-        - name: EMULATOR_PROXY
-          value: "{{EmulatorProxy}}"
         - name: EMULATOR_ID
           value: '{{Name}}'
         - name: CLIENT_ID
           value: '{{ClientId}}'
-      readinessProbe:
-        exec:
-          command:
-            - cat
-            - /emulator.ready
-        initialDelaySeconds: 60
-        timeoutSeconds: 5
-        periodSeconds: 5
-        successThreshold: 1
-        failureThreshold: 70
       resources:
         limits:
-          cpu: "3"
+          cpu: "2"
         requests:
-          memory: 6Gi
+          memory: 4Gi
   volumes:
     - name: dev-kvm
       hostPath:

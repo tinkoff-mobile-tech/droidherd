@@ -5,15 +5,13 @@ plugins {
 allprojects {
     group = "$packageGroup"
     version = System.getenv("BUILD_VERSION") ?: "DEV-SNAPSHOT"
-
-    repositories {
-        mavenCentral()
-    }
 }
 
 subprojects {
     apply plugin: 'java'
     apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'jacoco'
+    apply from: '../repositories.gradle'
 
     java {
         toolchain {
@@ -23,6 +21,17 @@ subprojects {
 
     test {
         useJUnitPlatform()
+        finalizedBy jacocoTestReport // report is always generated after tests run
+    }
+
+    jacocoTestReport {
+        dependsOn test // tests are required to run before generating the report
+
+        reports {
+            xml.required = true
+            csv.required = false
+            html.required = false
+        }
     }
 
     dependencyManagement {
@@ -48,6 +57,8 @@ subprojects {
             dependency "io.kotest:kotest-assertions-core-jvm:$kotestVersion"
             dependency "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
             dependency "org.junit.jupiter:junit-jupiter-api:$junitVersion"
+            dependency "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
+            dependency "org.junit.jupiter:junit-jupiter-api:$junitVersion"
             dependency "org.springframework.security:spring-security-core:$springSecurityVersion"
             dependency "org.springframework:spring-context:$springContextVersion"
             dependency "com.hubspot.jinjava:jinjava:$jinjavaVersion"
@@ -55,5 +66,24 @@ subprojects {
             dependency "io.kubernetes:client-java-extended:$kubernetesVersion"
             dependency "io.kubernetes:client-java-spring-integration:$kubernetesVersion"
         }
+    }
+}
+
+task jacocoRootReport(type: JacocoReport) {
+    dependsOn subprojects.jacocoTestReport
+
+    group = 'verification'
+    executionData project.fileTree(dir: '.', include: '**/build/jacoco/test.exec')
+    subprojects.each { subproject ->
+        subproject.tasks.withType(JacocoReport).each { report ->
+            additionalClassDirs report.allClassDirs
+            additionalSourceDirs report.allSourceDirs
+        }
+    }
+
+    reports {
+        xml.required = true
+        csv.required = false
+        html.required = true
     }
 }

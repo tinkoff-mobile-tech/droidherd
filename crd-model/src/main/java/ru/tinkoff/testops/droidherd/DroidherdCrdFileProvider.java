@@ -1,13 +1,14 @@
 package ru.tinkoff.testops.droidherd;
 
-import java.io.File;
-import java.net.URISyntaxException;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class DroidherdCrdFileProvider {
-    public File provide() {
+    public String provide() {
+        InputStream resource = DroidherdCrdFileProvider.class.getClassLoader().getResourceAsStream("crd/testops.tinkoff.ru_droidherdsessions.yaml");
         try {
-            return new File(DroidherdCrdFileProvider.class.getClassLoader().getResource("crd/testops.tinkoff.ru_droidherdsessions.yaml").toURI());
-        } catch (URISyntaxException e) {
+            return new String(resource.readAllBytes());
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

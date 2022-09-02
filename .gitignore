@@ -2,11 +2,8 @@
 
 .gradle
 build/
-api/build
-app/build
-auth/build
-basic-auth/build
-crd-model/build
+**/build
+
 # Ignore Gradle GUI config
 gradle-app.setting
 
