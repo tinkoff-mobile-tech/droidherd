@@ -50,7 +50,6 @@ class RestApiV1Controller(private val droidherdService: DroidherdService) {
     ): DroidherdSessionStatus {
         validateClient(authDetails, clientId)
         val session = Session(authDetails.clientId, sessionId)
-        log.info("$session asked for session status")
         return droidherdService.getSessionStatus(session)
     }
 
@@ -61,7 +60,6 @@ class RestApiV1Controller(private val droidherdService: DroidherdService) {
         @PathVariable clientId: String,
     ): DroidherdClientStatus {
         validateClient(authDetails, clientId)
-        log.info("Client $clientId asked for status")
         return droidherdService.getClientStatus(authDetails.clientId)
     }
 
