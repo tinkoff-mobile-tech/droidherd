@@ -7,6 +7,7 @@ import io.prometheus.client.Counter
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import org.slf4j.LoggerFactory
+import ru.tinkoff.testops.droidherd.api.Emulator
 import ru.tinkoff.testops.droidherd.api.EmulatorRequest
 import ru.tinkoff.testops.droidherd.models.V1DroidherdSessionStatusEmulators
 import ru.tinkoff.testops.droidherd.service.configs.DroidherdConfig
@@ -77,7 +78,7 @@ class DroidherdOperator(
         }.onFailure {
             log.error("Exception occurred during processing $request", it)
         }.onSuccess {
-            log.info("Reconcile completed for ${request}: ${it.status}, ${it.result}")
+            log.info("Reconcile completed for ${request}: ${it.status}, ${it.result} ${it.details}")
         }.getOrElse {
             ReconcileResult(resultRequeueAfterTimeout, ReconcileResult.Status.Error)
         }.result
@@ -110,7 +111,8 @@ class DroidherdOperator(
 
         updateState(resource)
         val runningEmulators = kubeService.getEmulators(resource.getSession())
-        if ((resource.getReadyEmulators().size == resource.getTotalRequestedQuantity())
+        val readyEmulators = resource.getReadyEmulators()
+        if ((readyEmulators.size == resource.getTotalRequestedQuantity())
             && (runningEmulators.size == resource.getTotalRequestedQuantity())
         ) {
             return ReconcileResult(RESULT_OK, ReconcileResult.Status.Reconciled)
@@ -119,7 +121,7 @@ class DroidherdOperator(
         val emulatorsFromStatus = resource.getEmulatorsFromStatus()
         if (isResourceStatusUpdateNeeded(emulatorsFromStatus, runningEmulators)) {
             kubeService.updateSessionEmulators(resource.getSession(), runningEmulators)
-            return ReconcileResult(RESULT_OK, ReconcileResult.Status.StatusUpdated)
+            return ReconcileResult(RESULT_OK, ReconcileResult.Status.StatusUpdated, generateSessionDetails(readyEmulators, resource))
         }
 
         if (runningEmulators.size > resource.getTotalRequestedQuantity()) {
@@ -132,7 +134,11 @@ class DroidherdOperator(
             return ReconcileResult(resultRequeueAfterTimeout, ReconcileResult.Status.Creating)
         }
 
-        return ReconcileResult(resultRequeueAfterTimeout, ReconcileResult.Status.Pending)
+        return ReconcileResult(resultRequeueAfterTimeout, ReconcileResult.Status.Pending, generateSessionDetails(readyEmulators, resource))
+    }
+
+    private fun generateSessionDetails(readyEmulators: List<Emulator>, resource: DroidherdResource): String {
+        return "ready ${readyEmulators.size} from ${resource.getTotalRequestedQuantity()}"
     }
 
     private fun isResourceStatusUpdateNeeded(

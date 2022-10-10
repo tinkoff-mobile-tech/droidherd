@@ -4,7 +4,8 @@ import io.kubernetes.client.extended.controller.reconciler.Result
 
 class ReconcileResult(
     val result: Result,
-    val status: Status
+    val status: Status,
+    val details: String = ""
 ) {
 
     enum class Status {
