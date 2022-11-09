@@ -84,4 +84,9 @@ class DroidherdResource(droidherdSessionOriginal: V1DroidherdSession) {
     override fun hashCode(): Int {
         return droidherdSession.hashCode()
     }
+
+    override fun toString(): String {
+        return "DroidherdResource(session=$session, requests=$requests, totalRequestedQuantity=$totalRequestedQuantity)"
+    }
+
 }

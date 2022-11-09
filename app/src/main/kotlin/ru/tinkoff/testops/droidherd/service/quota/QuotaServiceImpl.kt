@@ -60,7 +60,7 @@ class QuotaServiceImpl(
                 quotaConfig.getObject("clients").entries.associate { it.key to it.value.unwrapped() as Int }
             if (quotaByClientMap != newQuotaByClientMap) {
                 quotaByClientMap = newQuotaByClientMap
-                log.info("Client quotas refreshed, entries: ${quotaByClientMap.size}")
+                log.info("Client quotas refreshed, entries: {}", quotaByClientMap.size)
             }
         } else {
             quotaByClientMap = mapOf()
@@ -80,7 +80,8 @@ class QuotaServiceImpl(
         val requested = requests.sumOf { it.quantity }
 
         if (spentQuota + requested > totalQuota) {
-            log.warn("$session exceeded its quota: $spentQuota + $requested > $totalQuota (spent + requested > total)")
+            log.warn("{} exceeded its quota: {} + {} > {} (spent + requested > total)",
+                session, spentQuota, requested, totalQuota)
             val remaining = max(0, totalQuota - spentQuota)
             val patchedRequests = patchRequests(session, requests, remaining)
             return QuotaResult(false, patchedRequests)
@@ -121,8 +122,8 @@ class QuotaServiceImpl(
     private fun patchRequestQuantity(session: Session, request: EmulatorRequest, accumulated: Int, remaining: Int): Int {
         if (request.quantity > remaining - accumulated) {
             val newQuantity = max(0, remaining - accumulated)
-            log.warn("$session requested ${request.quantity} and exceeded its quota. " +
-                "New quantity $newQuantity will be set for $session and ${request.image}")
+            log.warn("{} requested {} and exceeded its quota. New quantity {} will be set for {}",
+                session, request.quantity, newQuantity, request.image)
             return newQuantity
         }
         return request.quantity
