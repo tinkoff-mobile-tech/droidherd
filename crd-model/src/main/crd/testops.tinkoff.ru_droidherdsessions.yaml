@@ -119,7 +119,7 @@ spec:
                               type: string
                           required:
                             - name
-                            - value
+                            - uri
                           type: object
                         type: array
                     required:

@@ -16,7 +16,6 @@ class TemplateParameters(
         "EmulatorArgs" to config.emulatorArgs,
         "EmulatorProxy" to config.emulatorProxy,
         "Port" to config.servicePort,
-        "UID" to resource.getUid(),
-        "EmulatorContainerName" to config.emulatorContainerName
-    )
+        "UID" to resource.getUid()
+    ) + resource.getCrd().spec?.parameters.orEmpty().associate { "EMULATOR_${it.name}" to it.value.uppercase() }
 }
