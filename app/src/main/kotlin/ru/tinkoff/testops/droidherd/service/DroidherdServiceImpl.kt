@@ -56,6 +56,12 @@ class DroidherdServiceImpl(
         .labelNames("client")
         .register(registry)
 
+    private val emptySessionsTotal = Counter.build()
+        .name("empty_sessions_total")
+        .help("Number of failures in session creation (connected with CTQA-935)")
+        .labelNames("client")
+        .register(registry)
+
     fun init() {
         GlobalScope.launch(Dispatchers.IO) {
             val ticker = ticker(Duration.ofSeconds(config.invalidateSessionsPeriodSeconds).toMillis())
@@ -71,7 +77,9 @@ class DroidherdServiceImpl(
         DroidherdSessionStatus(
             if (!kubeService.getState().containsSession(session)) listOf()
             else kubeService.getState().get(session).getReadyEmulators()
-        )
+        ).also {
+            log.info("get session {}, emulators count: {}", session, it.emulators.size)
+        }
 
 
     override fun getClientStatus(clientId: String): DroidherdClientStatus =
@@ -106,8 +114,10 @@ class DroidherdServiceImpl(
     override fun requestEmulators(request: EmulatorsRequestData): List<EmulatorRequest> {
         val clientAttributes = request.data.clientAttributes
         log.info(
-            "request from {} for emulators. requests: ${request.data.requests}, parameters: ${request.data.parameters}, client attributes: {}. client ip: {}, client debug: {}",
+            "request from {} for emulators. requests: {}, parameters: {}, client attributes: {}. client ip: {}, client debug: {}",
             kv("session", request.session),
+            request.data.requests,
+            request.data.parameters,
             kv("clientAttributes", clientAttributes),
             kv("clientIp", request.clientIp),
             kv("clientDebug", request.data.debug)
@@ -152,7 +162,19 @@ class DroidherdServiceImpl(
     }
 
     override fun release(session: Session) {
-        log.info("Releasing $session")
+        release(session, false)
+    }
+
+    private fun release(session: Session, invalidation: Boolean) {
+        log.info("Releasing {}", session)
+        val resource = kubeService.getState().get(session)
+        if (!invalidation &&
+            resource.getTotalRequestedQuantity() > 0
+            && resource.getReadyEmulators().isEmpty()
+            && resource.getCrd().metadata?.deletionTimestamp == null) {
+            log.error("Session {} hasn't probably been created - all emulators not ready", session)
+            emptySessionsTotal.labels(session.clientId).inc()
+        }
         if (!kubeService.deleteCrd(session)) {
             throw RuntimeException("Unable to release session $session")
         }
@@ -160,7 +182,7 @@ class DroidherdServiceImpl(
 
     override fun releaseAll(clientId: String) {
         val sessions = kubeService.getState().get(clientId).keys
-        sessions.forEach { release(it) }
+        sessions.forEach { release(it, true) }
     }
 
     override fun dumpState(): DroidherdSystemStatus =
@@ -170,8 +192,10 @@ class DroidherdServiceImpl(
         )
 
     override fun ping(session: Session) {
-        if (kubeService.getState().containsSession(session)) {
-            kubeService.updateSessionLastSeen(session, LocalDateTime.now())
+        kubeService.getState().let {
+            if (it.containsSession(session)) {
+                kubeService.updateSessionLastSeen(it.get(session), LocalDateTime.now())
+            }
         }
     }
 
@@ -196,15 +220,15 @@ class DroidherdServiceImpl(
             if (!isValidResource) {
                 sessionsExpiredTotal.labels(resource.getSession().clientId).inc()
                 try {
-                    release(resource.getSession())
+                    release(resource.getSession(), true)
                 } catch (e: RuntimeException) {
-                    log.error("Error during invalidating session: ${resource.getSession()}", e)
+                    log.error("Error during invalidating session: {}", resource.getSession(), e)
                 }
             }
             !isValidResource
         }
         if (invalid > 0) {
-            log.info("Invalidation finished. Total: ${resources.size - invalid} sessions ($invalid were invalidated)")
+            log.info("Invalidation finished. Total: {} sessions ({} were invalidated)", resources.size - invalid, invalid)
         }
     }
 
@@ -215,11 +239,13 @@ class DroidherdServiceImpl(
 
     private fun isValidResource(resource: DroidherdResource, limitLastSeen: LocalDateTime, limitCreatedAt: LocalDateTime): Boolean {
         if (!resource.isDebugSession() && resource.getLastSeen().isBefore(limitLastSeen)) {
-            log.warn("${resource.getSession()} hasn't been seen since ${resource.getLastSeen()}, while limit = $limitLastSeen, invalidate state")
+            log.warn("{} hasn't been seen since {}, while limit = {}, invalidate state",
+                resource.getSession(), resource.getLastSeen(), limitLastSeen)
             return false
         }
         if (resource.getCreatedAt().isBefore(limitCreatedAt)) {
-            log.warn("${resource.getSession()} is expired (created at ${resource.getCreatedAt()}, while limit = $limitCreatedAt), invalidate state")
+            log.warn("{} is expired (created at {}, while limit = {}), invalidate state",
+                resource.getSession(), resource.getCreatedAt(), limitCreatedAt)
             return false
         }
         return true
@@ -252,7 +278,7 @@ class DroidherdServiceImpl(
         }
         request.data.parameters?.let { parameters ->
             parameters.forEach {
-                validateString(1, MAX_PARAMETER_NAME_LENGTH, it.name, "parameter.${it.name}");
+                validateString(1, MAX_PARAMETER_NAME_LENGTH, it.name, "parameter.${it.name}")
                 validateString(0, MAX_PARAMETER_LENGTH, it.value, "parameter.${it.name}=${it.value}", false)
             }
         }

@@ -48,7 +48,7 @@ class KubeServiceImpl(
             updateState(updatedResource)
             true
         }.onFailure {
-            log.error("Failed to update resource: ${resource.getName()}, ${resource.getUid()}")
+            log.error("Failed to update resource: {}, {}", resource.getName(), resource.getUid(), it)
         }.getOrElse { false }
     }
 
@@ -75,16 +75,21 @@ class KubeServiceImpl(
         services: Map<String, V1Service>
     )
         : V1DroidherdSessionStatusEmulators? {
-        val service = services[droidherdId] ?: return null
+        val nullableService = services[droidherdId]
+        if (nullableService == null) {
+            log.warn("No service or pod with id: {}. Pod name: {}", droidherdId, pod.metadata?.name)
+            return null
+        }
+        val service: V1Service = nullableService
 
         val podImage = pod.metadata?.labels?.get("image")
         if (podImage == null) {
-            log.warn("Emulator pod $droidherdId doesn't have image label. Can't map to emulator.")
+            log.warn("Emulator pod {} doesn't have image label. Can't map to emulator.", droidherdId)
             return null
         }
         val hostIp = pod.status?.hostIP
         if (hostIp == null) {
-            log.warn("Pod $droidherdId doesn't have hostIp. Can't map to emulator.")
+            log.warn("Pod {} doesn't have hostIp. Can't map to emulator.", droidherdId)
             return null
         }
 
@@ -95,7 +100,7 @@ class KubeServiceImpl(
             adb = "${hostIp}:${service.spec?.ports?.get(0)?.nodePort}"
 
             val extraPorts = service.spec?.ports?.drop(1) ?: listOf()
-            extraPorts.map { port ->
+            extraUris = extraPorts.map { port ->
                 V1DroidherdSessionStatusExtraUris().apply {
                     name = port.name
                     uri = "${hostIp}:${port.nodePort}"
@@ -104,12 +109,12 @@ class KubeServiceImpl(
         }
     }
 
-    override fun createEmulator(resource: DroidherdResource, templateParameters: TemplateParameters) {
+    override fun createEmulator(templateParameters: TemplateParameters) {
         create("service") {
             kubeClient.createService(templateParameters)
         }
         create("pod") {
-            kubeClient.createPod(templateParameters, resource)
+            kubeClient.createPod(templateParameters)
         }
     }
 
@@ -143,29 +148,29 @@ class KubeServiceImpl(
         return deleted
     }
 
-    override fun updateSessionLastSeen(session: Session, time: LocalDateTime) {
-        updateStatus(session) {
+    override fun updateSessionLastSeen(resource: DroidherdResource, time: LocalDateTime) {
+        updateStatus(resource) {
             val status = it.status ?: V1DroidherdSessionStatus()
             status.lastSeen(time.toString())
         }
     }
 
-    override fun updateSessionEmulators(session: Session, emulators: List<V1DroidherdSessionStatusEmulators>) {
-        updateStatus(session) {
+    override fun updateSessionEmulators(resource: DroidherdResource, emulators: List<V1DroidherdSessionStatusEmulators>) {
+        updateStatus(resource) {
             val status = it.status ?: V1DroidherdSessionStatus()
             status.emulators(emulators)
         }
     }
 
-    private fun updateStatus(session: Session, status: (V1DroidherdSession) -> V1DroidherdSessionStatus) {
-        val resource = state.get(session)
+    private fun updateStatus(resource: DroidherdResource, status: (V1DroidherdSession) -> V1DroidherdSessionStatus) {
+        val session = resource.getSession()
         if (!resource.isExist()) {
             throw RuntimeException("CRD for session $session not exist during update status")
         }
 
-        val response = kubeClient.updateStatus(resource.getCrd(), status)
+        val response = kubeClient.updateStatus(resource.getCrd(), status).throwsApiException()
         if (!response.isSuccess) {
-            log.error("Unable to update status for $session: ${response.httpStatusCode}, ${response.status}")
+            log.error("Unable to update status for {}: {}, {}", session, response.httpStatusCode, response.status)
             throw RuntimeException("Unable to update status for $session")
         }
         updateState(DroidherdResource(response.getObject()))
@@ -177,7 +182,7 @@ class KubeServiceImpl(
         } catch (e: ApiException) {
             val code = e.code
             if (code != 409) { // already exists
-                log.error("Error with unknown code ${e.code} on creating the $resourceName")
+                log.error("Error with unknown code {} and details {} on creating the {}", e.code, e.message, resourceName, e)
                 throw e
             }
         }
@@ -189,7 +194,7 @@ class KubeServiceImpl(
         } catch (e: ApiException) {
             val code = e.code
             if (code != 404) { // not found
-                log.error("Error with unknown code ${e.code} on deleting the $resourceName")
+                log.error("Error with unknown code {} and details {} on deleting the {}", e.code, e.message, resourceName, e)
                 throw e
             }
         }

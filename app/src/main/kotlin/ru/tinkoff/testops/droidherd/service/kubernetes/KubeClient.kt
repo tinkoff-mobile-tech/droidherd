@@ -146,7 +146,7 @@ class KubeClient(
         val response = droidherdSessionApi.delete(config.namespace, generateResourceName(session))
         val success = response.isSuccess || response.status.code == 404
         if (!success) {
-            log.error("Unable to release session $session: ${response.status}")
+            log.error("Unable to release session {}: {}", session, response.status)
         }
         return success
     }
@@ -175,18 +175,8 @@ class KubeClient(
     fun updateSession(session: V1DroidherdSession): V1DroidherdSession =
         droidherdSessionApi.update(session).throwsApiException().getObject()
 
-    fun createPod(templateParameters: TemplateParameters, model: DroidherdResource): V1Pod {
+    fun createPod(templateParameters: TemplateParameters): V1Pod {
         val pod = loadYamlAs(podYaml, templateParameters.asMap, V1Pod::class.java)
-
-        val containers = pod.spec?.containers ?: throw IllegalStateException("Pod emulator template doesn't have containers")
-        val emulatorParameters = model.getCrd().spec?.parameters.orEmpty()
-        val envs = emulatorParameters.map { V1EnvVar().name(generateEnvName(it.name)).value(it.value) }
-        val emulatorContainer = containers.find {
-            it.name == config.emulatorContainerName
-        }
-            ?: throw IllegalStateException("Emulator container ${config.emulatorContainerName} not found in pod template")
-        emulatorContainer.env = emulatorContainer.env.orEmpty().plus(envs)
-
         log.debug("creating pod {}", pod)
 
         return coreApi.createNamespacedPod(
@@ -249,5 +239,4 @@ class KubeClient(
 
     private fun generateResourceName(session: Session) = "${session.clientId}-${session.sessionId}"
 
-    private fun generateEnvName(name: String) = "EMULATOR_${name.uppercase()}"
 }

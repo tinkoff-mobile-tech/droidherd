@@ -19,10 +19,10 @@ interface KubeService {
     fun updateState(resource: DroidherdResource)
     fun deleteSessionFromState(session: Session)
 
-    fun updateSessionLastSeen(session: Session, time: LocalDateTime)
-    fun updateSessionEmulators(session: Session, emulators: List<V1DroidherdSessionStatusEmulators>)
+    fun updateSessionLastSeen(resource: DroidherdResource, time: LocalDateTime)
+    fun updateSessionEmulators(resource: DroidherdResource, emulators: List<V1DroidherdSessionStatusEmulators>)
 
     fun getEmulators(session: Session): List<V1DroidherdSessionStatusEmulators>
-    fun createEmulator(resource: DroidherdResource, templateParameters: TemplateParameters)
+    fun createEmulator(templateParameters: TemplateParameters)
     fun deleteEmulatorsWithIds(ids: List<String>)
 }

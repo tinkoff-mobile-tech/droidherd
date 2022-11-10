@@ -16,7 +16,6 @@ data class DroidherdConfig(
     val emulatorArgs: String,
     val servicePort: Int,
     val requeueAfterSeconds: Long,
-    val emulatorContainerName: String,
     val dryRun: Boolean,
     val applyCrdAtStartup: Boolean,
     val pretty: String = "true",

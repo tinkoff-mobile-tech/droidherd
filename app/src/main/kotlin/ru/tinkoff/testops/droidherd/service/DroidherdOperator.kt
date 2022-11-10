@@ -7,7 +7,6 @@ import io.prometheus.client.Counter
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import org.slf4j.LoggerFactory
-import ru.tinkoff.testops.droidherd.api.Emulator
 import ru.tinkoff.testops.droidherd.api.EmulatorRequest
 import ru.tinkoff.testops.droidherd.models.V1DroidherdSessionStatusEmulators
 import ru.tinkoff.testops.droidherd.service.configs.DroidherdConfig
@@ -73,12 +72,12 @@ class DroidherdOperator(
 
     fun reconcileSession(request: Request): Result {
         return runCatching {
-            log.info("Reconciling session $request")
+            log.info("Reconciling session {}", request)
             process(request)
         }.onFailure {
-            log.error("Exception occurred during processing $request", it)
+            log.error("Exception occurred during processing {}", request, it)
         }.onSuccess {
-            log.info("Reconcile completed for ${request}: ${it.status}, ${it.result} ${it.details}")
+            log.info("Reconcile completed for {}: {}, {} {}", request, it.status, it.result, it.details)
         }.getOrElse {
             ReconcileResult(resultRequeueAfterTimeout, ReconcileResult.Status.Error)
         }.result
@@ -94,11 +93,6 @@ class DroidherdOperator(
         }
     }
 
-    private fun updateState(resource: DroidherdResource): ReconcileResult {
-        kubeService.updateState(resource)
-        return ReconcileResult(RESULT_OK, ReconcileResult.Status.StatusUpdated)
-    }
-
     private fun deleteSession(request: Request): ReconcileResult {
         kubeService.deleteSessionFromState(getSession(request.name))
         return ReconcileResult(RESULT_OK, ReconcileResult.Status.Deleted)
@@ -109,24 +103,24 @@ class DroidherdOperator(
             return ReconcileResult(RESULT_OK, ReconcileResult.Status.QuotaPatched)
         }
 
-        updateState(resource)
         val runningEmulators = kubeService.getEmulators(resource.getSession())
-        val readyEmulators = resource.getReadyEmulators()
-        if ((readyEmulators.size == resource.getTotalRequestedQuantity())
+        if ((resource.getReadyEmulators().size == resource.getTotalRequestedQuantity())
             && (runningEmulators.size == resource.getTotalRequestedQuantity())
         ) {
+            kubeService.updateSessionEmulators(resource, runningEmulators)
             return ReconcileResult(RESULT_OK, ReconcileResult.Status.Reconciled)
         }
 
         val emulatorsFromStatus = resource.getEmulatorsFromStatus()
-        if (isResourceStatusUpdateNeeded(emulatorsFromStatus, runningEmulators)) {
-            kubeService.updateSessionEmulators(resource.getSession(), runningEmulators)
-            return ReconcileResult(RESULT_OK, ReconcileResult.Status.StatusUpdated, generateSessionDetails(readyEmulators, resource))
-        }
 
         if (runningEmulators.size > resource.getTotalRequestedQuantity()) {
             reduceEmulators(resource, runningEmulators)
             return ReconcileResult(resultRequeueAfterTimeout, ReconcileResult.Status.Reducing)
+        }
+
+        if (isResourceStatusUpdateNeeded(emulatorsFromStatus, runningEmulators)) {
+            kubeService.updateSessionEmulators(resource, runningEmulators)
+            return ReconcileResult(RESULT_OK, ReconcileResult.Status.StatusUpdated, generateSessionDetails(runningEmulators, resource))
         }
 
         if (emulatorsFromStatus.size < resource.getTotalRequestedQuantity()) {
@@ -134,11 +128,12 @@ class DroidherdOperator(
             return ReconcileResult(resultRequeueAfterTimeout, ReconcileResult.Status.Creating)
         }
 
-        return ReconcileResult(resultRequeueAfterTimeout, ReconcileResult.Status.Pending, generateSessionDetails(readyEmulators, resource))
+        return ReconcileResult(resultRequeueAfterTimeout, ReconcileResult.Status.Pending, generateSessionDetails(runningEmulators, resource))
     }
 
-    private fun generateSessionDetails(readyEmulators: List<Emulator>, resource: DroidherdResource): String {
-        return "ready ${readyEmulators.size} from ${resource.getTotalRequestedQuantity()}"
+    private fun generateSessionDetails(runningEmulators: List<V1DroidherdSessionStatusEmulators>, resource: DroidherdResource): String {
+        val readyEmulators = runningEmulators.count { it.ready }
+        return "ready $readyEmulators from ${runningEmulators.size}, requested: ${resource.getTotalRequestedQuantity()}"
     }
 
     private fun isResourceStatusUpdateNeeded(
@@ -147,10 +142,7 @@ class DroidherdOperator(
     ): Boolean {
         val isStatusSame = (emulatorsInStatus.size == runningEmulators.size)
             && emulatorsInStatus.containsAll(runningEmulators)
-        if (isStatusSame) {
-            return false
-        }
-        return true
+        return !isStatusSame
     }
 
     private fun createEmulators(resource: DroidherdResource, runningEmulatorsIds: Set<String>) {
@@ -167,18 +159,21 @@ class DroidherdOperator(
     private fun submitCreationApiCall(resource: DroidherdResource, request: EmulatorRequest, name: String) {
         enqueueApiCall {
             val templateParameters = TemplateParameters(name, resource, request.image, config)
-            log.info("Creating emulator $name for ${resource.getSession()}")
+            log.info("Creating emulator {} for {}", name, resource.getSession())
             try {
-                kubeService.createEmulator(resource, templateParameters)
+                kubeService.createEmulator(templateParameters)
             } catch (e: RuntimeException) {
-                log.error("Failed to allocate emulator $name for ${resource.getSession()}", e)
+                log.error("Failed to allocate emulator {} for {}", name, resource.getSession(), e)
                 emulatorsAllocationFailedTotal.labels(resource.getSession().clientId, request.image).inc()
             }
         }
     }
 
     private fun validateQuota(resource: DroidherdResource): Boolean {
-        val sessionsById = kubeService.getState().get(resource.getSession().clientId)
+        val sessionsById = mutableMapOf<Session, DroidherdResource>().also {
+            it.putAll(kubeService.getState().get(resource.getSession().clientId))
+            it[resource.getSession()] = resource
+        }
         val quotaResult = quotaService.validate(
             resource.getSession(), resource.getRequests(), sessionsById
         )
@@ -188,18 +183,19 @@ class DroidherdOperator(
 
         val sessionsToPatch = quotaService.validateBySessionsAge(sessionsById).also {
             if (it.isEmpty()) {
-                log.error(
-                    "Quota validation failed for ${resource.getSession()} result is $quotaResult" +
-                        " but after validate by age results is empty."
+                log.warn(
+                    "Quota validation failed, result is {}" +
+                    " but after validate by age results is empty. Sessions by id: {}, resource: {}",
+                    quotaResult, sessionsById, resource
                 )
             }
         }
         sessionsToPatch.forEach {
             if (it.getTotalRequestedQuantity() == 0) {
-                log.warn("Session ${it.getSession()} completely exceeded quota: request will be released")
+                log.warn("Session {} completely exceeded quota: request will be released", it.getSession())
                 kubeService.deleteCrd(it.getSession())
             } else {
-                log.warn("Requests of ${it.getSession()} will be updated: ${it.getRequests()}")
+                log.warn("Requests of {} will be updated: {}", it.getSession(), it.getRequests())
                 kubeService.updateCrd(it)
             }
         }
@@ -225,7 +221,7 @@ class DroidherdOperator(
         }
         if (ids.isNotEmpty()) {
             enqueueApiCall {
-                log.info("Deleting emulators with ids $ids")
+                log.info("Deleting emulators with ids {}", ids)
                 kubeService.deleteEmulatorsWithIds(ids)
             }
         }
