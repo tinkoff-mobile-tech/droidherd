@@ -8,6 +8,7 @@ import java.time.LocalDateTime
 
 interface KubeService {
     fun getState(): ReadOnlyKubeState
+    fun getAllActualResources(): List<DroidherdResource>
 
     fun getCrd(name: String): DroidherdResource
 

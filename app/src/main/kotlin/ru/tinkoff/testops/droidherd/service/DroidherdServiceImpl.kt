@@ -2,6 +2,7 @@ package ru.tinkoff.testops.droidherd.service
 
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Counter
+import io.prometheus.client.Gauge
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.ticker
@@ -18,6 +19,7 @@ import ru.tinkoff.testops.droidherd.service.models.DroidherdSystemStatus
 import ru.tinkoff.testops.droidherd.service.models.EmulatorsRequestData
 import ru.tinkoff.testops.droidherd.service.models.Session
 import ru.tinkoff.testops.droidherd.service.quota.QuotaService
+import ru.tinkoff.testops.droidherd.spring.controller.RestApiInternalController.EmulatorStartupMetric
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -60,6 +62,12 @@ class DroidherdServiceImpl(
         .name("empty_sessions_total")
         .help("Number of failures in session creation (connected with CTQA-935)")
         .labelNames("client")
+        .register(registry)
+
+    private val emulatorStartupTime = Gauge.build()
+        .name("emulator_startup_time")
+        .help("Emulator startup time per image")
+        .labelNames("image")
         .register(registry)
 
     fun init() {
@@ -211,7 +219,7 @@ class DroidherdServiceImpl(
 
     override fun invalidateResources() {
         log.debug("Invalidating resources")
-        val resources = kubeService.getState().getAllResources()
+        val resources = kubeService.getAllActualResources()
         val currentTime = LocalDateTime.now()
         val limitLastSeen = currentTime.minusSeconds(config.lastSeenMaxDeltaSeconds)
         val limitCreatedAt = currentTime.minusSeconds(config.sessionValidationExpiredAfterSeconds)
@@ -230,6 +238,11 @@ class DroidherdServiceImpl(
         if (invalid > 0) {
             log.info("Invalidation finished. Total: {} sessions ({} were invalidated)", resources.size - invalid, invalid)
         }
+    }
+
+    override fun postEmulatorStartupMetrics(metric: EmulatorStartupMetric) {
+        emulatorStartupTime.labels(metric.image).set(metric.value)
+        log.info("Got emulator startup metrics: {}", metric)
     }
 
     override fun postMetrics(session: Session, metrics: List<DroidherdClientMetric>) {

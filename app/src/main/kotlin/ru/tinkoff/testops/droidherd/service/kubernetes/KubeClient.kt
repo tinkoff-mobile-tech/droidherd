@@ -151,17 +151,12 @@ class KubeClient(
         return success
     }
 
-    fun getAllSessionsByClientId(): Map<String, Map<Session, DroidherdResource>> {
-        return droidherdSessionApi
-            .list(config.namespace, ListOptions().apply {
-                timeoutSeconds = config.listResourcesTimeoutSeconds
-            }
-            ).throwsApiException()
-            .getObject().items.map { DroidherdResource(it) }
-            .groupBy({ it.getSession().clientId },
-                { it.getSession() to it })
-            .mapValues { (_, values) -> values.toMap() }
-    }
+    fun getAllActualResources(): List<DroidherdResource> = droidherdSessionApi
+        .list(config.namespace, ListOptions().apply {
+            timeoutSeconds = config.listResourcesTimeoutSeconds
+        }
+        ).throwsApiException()
+        .getObject().items.map { DroidherdResource(it) }
 
     fun updateStatus(
         session: V1DroidherdSession,

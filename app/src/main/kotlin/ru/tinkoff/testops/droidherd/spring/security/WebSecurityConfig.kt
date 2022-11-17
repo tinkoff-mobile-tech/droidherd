@@ -13,6 +13,7 @@ import org.springframework.security.config.http.SessionCreationPolicy.STATELESS
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter
 import org.springframework.security.web.authentication.HttpStatusEntryPoint
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler
+import org.springframework.security.web.util.matcher.AndRequestMatcher
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher
 import org.springframework.security.web.util.matcher.NegatedRequestMatcher
 import org.springframework.security.web.util.matcher.OrRequestMatcher
@@ -30,8 +31,8 @@ open class WebSecurityConfig(private val provider: TokenAuthenticationProvider) 
             AntPathRequestMatcher("/swagger-ui/**"),
             AntPathRequestMatcher("/swagger-ui.html")
         )
-        private val PROTECTED_URLS: RequestMatcher = NegatedRequestMatcher(PUBLIC_URLS)
-        private val SUPERUSER_URLS: RequestMatcher = OrRequestMatcher(AntPathRequestMatcher("/api/internal/**"))
+        private val INTERNAL_URLS: RequestMatcher = AntPathRequestMatcher("/api/internal/**")
+        private val PROTECTED_URLS: RequestMatcher = AndRequestMatcher(NegatedRequestMatcher(INTERNAL_URLS), NegatedRequestMatcher(PUBLIC_URLS))
     }
 
     override fun configure(auth: AuthenticationManagerBuilder) {
@@ -49,7 +50,6 @@ open class WebSecurityConfig(private val provider: TokenAuthenticationProvider) 
             .authenticationProvider(provider)
             .addFilterBefore(restAuthenticationFilter(), AnonymousAuthenticationFilter::class.java)
             .authorizeRequests()
-            .requestMatchers(SUPERUSER_URLS).hasAuthority("SUPERUSER")
             .requestMatchers(PROTECTED_URLS).authenticated()
             .requestMatchers(PUBLIC_URLS).permitAll()
             .and()

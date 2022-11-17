@@ -16,6 +16,7 @@ class TemplateParameters(
         "EmulatorArgs" to config.emulatorArgs,
         "EmulatorProxy" to config.emulatorProxy,
         "Port" to config.servicePort,
+        "DroidherdHost" to config.droidherdHost,
         "UID" to resource.getUid()
     ) + resource.getCrd().spec?.parameters.orEmpty().associate { "EMULATOR_${it.name}" to it.value.uppercase() }
 }
