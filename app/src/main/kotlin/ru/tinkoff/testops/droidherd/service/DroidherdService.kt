@@ -4,6 +4,7 @@ import ru.tinkoff.testops.droidherd.api.*
 import ru.tinkoff.testops.droidherd.service.models.DroidherdSystemStatus
 import ru.tinkoff.testops.droidherd.service.models.EmulatorsRequestData
 import ru.tinkoff.testops.droidherd.service.models.Session
+import ru.tinkoff.testops.droidherd.spring.controller.RestApiInternalController.EmulatorStartupMetric
 
 interface DroidherdService {
     fun getSessionStatus(session: Session): DroidherdSessionStatus
@@ -21,4 +22,6 @@ interface DroidherdService {
     fun getAllowedImages(): Collection<String>
 
     fun invalidateResources()
+
+    fun postEmulatorStartupMetrics(metric: EmulatorStartupMetric)
 }

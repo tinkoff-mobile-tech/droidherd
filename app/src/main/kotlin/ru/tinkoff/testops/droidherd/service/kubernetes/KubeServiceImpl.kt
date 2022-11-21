@@ -21,7 +21,10 @@ class KubeServiceImpl(
 ) : KubeService {
 
     @Volatile
-    private var state = KubeState(kubeClient.getAllSessionsByClientId())
+    private var state = KubeState(kubeClient.getAllActualResources()
+        .groupBy({ it.getSession().clientId },
+        { it.getSession() to it })
+        .mapValues { (_, values) -> values.toMap() })
     override fun getCrd(name: String): DroidherdResource {
         val session = kubeClient.getResource(name)
         return session?.let {
@@ -33,6 +36,7 @@ class KubeServiceImpl(
     private val log = LoggerFactory.getLogger(javaClass)
 
     override fun getState(): ReadOnlyKubeState = state
+    override fun getAllActualResources(): List<DroidherdResource> = kubeClient.getAllActualResources()
 
     override fun createSession(request: EmulatorsRequestData): DroidherdResource {
         val droidherdSession = kubeClient.create(request)

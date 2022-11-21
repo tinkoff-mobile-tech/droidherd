@@ -18,6 +18,7 @@ data class DroidherdConfig(
     val requeueAfterSeconds: Long,
     val dryRun: Boolean,
     val applyCrdAtStartup: Boolean,
+    val droidherdHost: String,
     val pretty: String = "true",
     val fieldManager: String = "",
     val fieldValidation: String = "",
