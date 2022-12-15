@@ -10,7 +10,8 @@ import io.kubernetes.client.informer.SharedIndexInformer
 import io.kubernetes.client.informer.SharedInformerFactory
 import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.openapi.apis.CoreV1Api
-import io.kubernetes.client.openapi.models.*
+import io.kubernetes.client.openapi.models.V1Pod
+import io.kubernetes.client.openapi.models.V1Service
 import io.prometheus.client.CollectorRegistry
 import org.springframework.boot.ApplicationRunner
 import org.springframework.context.annotation.Bean
@@ -133,33 +134,6 @@ open class ApplicationConfig {
                     .withReconciler { request -> operator.reconcileSession(request!!) }
                     .withReadyFunc { sessionInformer.hasSynced() }
                     .withName("droidherdSessionController")
-                    .build()
-            )
-            .addController(
-                ControllerBuilder.defaultBuilder(sharedInformerFactory)
-                    .watch { queue: WorkQueue<Request> ->
-                        ControllerBuilder
-                            .controllerWatchBuilder(V1Pod::class.java, queue)
-                            .withResyncPeriod(Duration.ofMinutes(config.operatorResyncPeriodMinutes))
-                            .build()
-                    }
-                    .withWorkerCount(1)
-                    .withReconciler { request -> operator.reconcilePod(request!!) }
-                    .withReadyFunc { podInformer.hasSynced() }
-                    .withName("podDroidherdController")
-                    .build()
-            ).addController(
-                ControllerBuilder.defaultBuilder(sharedInformerFactory)
-                    .watch { queue: WorkQueue<Request> ->
-                        ControllerBuilder
-                            .controllerWatchBuilder(V1Service::class.java, queue)
-                            .withResyncPeriod(Duration.ofMinutes(config.operatorResyncPeriodMinutes))
-                            .build()
-                    }
-                    .withWorkerCount(1)
-                    .withReconciler { request -> operator.reconcileService(request!!) }
-                    .withReadyFunc { serviceInformer.hasSynced() }
-                    .withName("serviceDroidherdController")
                     .build()
             )
             .build()

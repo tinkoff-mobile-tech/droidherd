@@ -30,7 +30,9 @@ class DroidherdOperator(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    private val resultRequeueAfterTimeout = Result(true, Duration.ofSeconds(config.requeueAfterSeconds))
+    private val resultRequeueAfterDefault = Result(true, Duration.ofSeconds(config.requeueAfterDefaultSeconds))
+    private val resultRequeueAfterPending = Result(true, Duration.ofSeconds(config.requeueAfterPendingSeconds))
+    private val resultRequeueAfterCreation = Result(true, Duration.ofSeconds(config.requeueAfterCreationSeconds))
 
     private val apiCallsChannel: Channel<() -> Unit> = Channel()
 
@@ -56,30 +58,16 @@ class DroidherdOperator(
         }
     }
 
-    fun reconcilePod(request: Request): Result {
-        log.debug("reconciling pod {}", request)
-        // we actually need only indexer for client to get actual state of pods
-        // so didn't perform any actions here
-        return RESULT_OK
-    }
-
-    fun reconcileService(request: Request): Result {
-        log.debug("reconciling service {}", request)
-        // we actually need only indexer for client to get actual state of services
-        // so didn't perform any actions here
-        return RESULT_OK
-    }
-
     fun reconcileSession(request: Request): Result {
         return runCatching {
-            log.info("Reconciling session {}", request)
+            log.debug("Reconciling session {}", request)
             process(request)
         }.onFailure {
             log.error("Exception occurred during processing {}", request, it)
         }.onSuccess {
             log.info("Reconcile completed for {}: {}, {} {}", request, it.status, it.result, it.details)
         }.getOrElse {
-            ReconcileResult(resultRequeueAfterTimeout, ReconcileResult.Status.Error)
+            ReconcileResult(resultRequeueAfterDefault, ReconcileResult.Status.Error)
         }.result
     }
 
@@ -107,7 +95,7 @@ class DroidherdOperator(
         if ((resource.getReadyEmulators().size == resource.getTotalRequestedQuantity())
             && (runningEmulators.size == resource.getTotalRequestedQuantity())
         ) {
-            kubeService.updateSessionEmulators(resource, runningEmulators)
+            kubeService.updateState(resource)
             return ReconcileResult(RESULT_OK, ReconcileResult.Status.Reconciled)
         }
 
@@ -115,25 +103,26 @@ class DroidherdOperator(
 
         if (runningEmulators.size > resource.getTotalRequestedQuantity()) {
             reduceEmulators(resource, runningEmulators)
-            return ReconcileResult(resultRequeueAfterTimeout, ReconcileResult.Status.Reducing)
+            return ReconcileResult(resultRequeueAfterDefault, ReconcileResult.Status.Reducing)
         }
 
         if (isResourceStatusUpdateNeeded(emulatorsFromStatus, runningEmulators)) {
             kubeService.updateSessionEmulators(resource, runningEmulators)
-            return ReconcileResult(RESULT_OK, ReconcileResult.Status.StatusUpdated, generateSessionDetails(runningEmulators, resource))
+            return ReconcileResult(resultRequeueAfterPending, ReconcileResult.Status.StatusUpdated, generateSessionDetails(runningEmulators, resource))
         }
 
         if (emulatorsFromStatus.size < resource.getTotalRequestedQuantity()) {
             createEmulators(resource, runningEmulators.map { it.id }.toSet())
-            return ReconcileResult(resultRequeueAfterTimeout, ReconcileResult.Status.Creating)
+            return ReconcileResult(resultRequeueAfterCreation, ReconcileResult.Status.Creating)
         }
 
-        return ReconcileResult(resultRequeueAfterTimeout, ReconcileResult.Status.Pending, generateSessionDetails(runningEmulators, resource))
+        return ReconcileResult(resultRequeueAfterPending, ReconcileResult.Status.Pending, generateSessionDetails(runningEmulators, resource))
     }
 
     private fun generateSessionDetails(runningEmulators: List<V1DroidherdSessionStatusEmulators>, resource: DroidherdResource): String {
         val readyEmulators = runningEmulators.count { it.ready }
-        return "ready $readyEmulators from ${runningEmulators.size}, requested: ${resource.getTotalRequestedQuantity()}"
+        return "ready $readyEmulators from ${runningEmulators.size}, requested: ${resource.getTotalRequestedQuantity()}" +
+                ", version ${resource.getCrd().metadata?.resourceVersion}"
     }
 
     private fun isResourceStatusUpdateNeeded(
