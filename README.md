@@ -41,6 +41,9 @@ Main application config is stored [here](app/src/main/resources/application.conf
    - `emulatorProxy` — proxy using inside the emulator.
    - `servicePort` — port of the service using for creating the emulator.
    - `dryRun` — enables dry run stage if true.
+   - `requeueAfterDefaultSeconds` - operator default reconcile after timeout
+   - `requeueAfterPendingSeconds` - operator reconcile after timeout in case of pending emulators (if emulators not ready)
+   - `requeueAfterCreationSeconds` - operator reconcile after emulators creation (recommends to set value <= min startup container with emulator)
    - `applyCrdAtStartup` — applies [CRD DroidherdSession](crd-model/src/main/resources/crd/testops.tinkoff.ru_droidherdsessions.yaml) at startup if true.
 - `quota`
   - `defaultQuota` — max number of emulators allowed for one client by default.

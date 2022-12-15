@@ -65,6 +65,7 @@ subprojects {
             dependency "io.kubernetes:client-java:$kubernetesVersion"
             dependency "io.kubernetes:client-java-extended:$kubernetesVersion"
             dependency "io.kubernetes:client-java-spring-integration:$kubernetesVersion"
+            dependency "io.prometheus:simpleclient_common:$prometheusClientVersion"
         }
     }
 }
