@@ -35,7 +35,7 @@ class DroidherdServiceImpl(
         private const val MAX_K8S_LABEL_LENGTH = 63
         private const val MAX_CLIENT_INFO_LENGTH = 128
         private const val MAX_CLIENT_VERSION_LENGTH = 128
-        private const val MAX_CI_URL_LENGTH = 1024
+        private const val MAX_CI_ATTRIBUTE_LENGTH = 1024
         private const val MAX_PARAMETER_NAME_LENGTH = 55
         private const val MAX_PARAMETER_LENGTH = 8192
         private val ALPHANUM_REGEX = Regex("^[a-zA-Z0-9-_]+\$")
@@ -276,11 +276,11 @@ class DroidherdServiceImpl(
             validateString(1, MAX_CLIENT_VERSION_LENGTH, version, "client.version", false)
             validateString(1, MAX_CLIENT_INFO_LENGTH, info, "client.info", false)
             ci?.let {
-                validateString(0, MAX_K8S_LABEL_LENGTH, it.name, "ci.name")
-                validateString(0, MAX_K8S_LABEL_LENGTH, it.reference, "ci.reference", false)
-                validateString(0, MAX_K8S_LABEL_LENGTH, it.repository, "ci.repository", false)
-                validateString(0, MAX_K8S_LABEL_LENGTH, it.triggeredBy, "ci.name", false)
-                validateString(0, MAX_CI_URL_LENGTH, it.jobUrl, "ci.name", false)
+                validateString(0, MAX_CI_ATTRIBUTE_LENGTH, it.name, "ci.name")
+                validateString(0, MAX_CI_ATTRIBUTE_LENGTH, it.reference, "ci.reference", false)
+                validateString(0, MAX_CI_ATTRIBUTE_LENGTH, it.repository, "ci.repository", false)
+                validateString(0, MAX_CI_ATTRIBUTE_LENGTH, it.triggeredBy, "ci.name", false)
+                validateString(0, MAX_CI_ATTRIBUTE_LENGTH, it.jobUrl, "ci.name", false)
             }
             metadata?.let {
                 it.forEach {entry ->
