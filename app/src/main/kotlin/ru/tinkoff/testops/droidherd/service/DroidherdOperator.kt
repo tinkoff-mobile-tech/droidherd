@@ -151,7 +151,7 @@ class DroidherdOperator(
             log.info("Creating emulator {} for {}", name, resource.getSession())
             try {
                 kubeService.createEmulator(templateParameters)
-            } catch (e: RuntimeException) {
+            } catch (e: Exception) {
                 log.error("Failed to allocate emulator {} for {}", name, resource.getSession(), e)
                 emulatorsAllocationFailedTotal.labels(resource.getSession().clientId, request.image).inc()
             }

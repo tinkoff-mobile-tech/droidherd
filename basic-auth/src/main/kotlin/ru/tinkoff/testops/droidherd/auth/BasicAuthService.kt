@@ -10,6 +10,7 @@ class BasicAuthService(private val basicAuthClients: Map<String, BasicAuthClient
         }
         val decodedToken = String(Base64Utils.decodeFromString(processedToken))
         val (clientId, password) = decodedToken.split(":")
+            .map { it.trim() }
         return BasicAuthData(isValid(clientId, password), clientId)
     }
 

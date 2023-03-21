@@ -177,13 +177,8 @@ open class ApplicationConfig {
         podIndexInformer,
         serviceIndexInformer,
         crdFileProvider
-    ).also {
-        if (droidherdConfig.applyCrdAtStartup) {
-            it.applyCrd(droidherdConfig, apiClient)
-        }
-        if (droidherdConfig.dryRun) {
-            it.dryRun()
-        }
+    ).apply {
+        init(apiClient)
     }
 
     @Bean

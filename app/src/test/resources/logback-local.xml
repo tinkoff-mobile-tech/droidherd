@@ -8,9 +8,9 @@
         </encoder>
     </appender>
 
-    <root level="INFO">
+    <root level="DEBUG">
         <appender-ref ref="STDOUT"/>
     </root>
 </configuration>
 
-    <!-- use this template for local run for proper stacktrace formatting in logs -->
+<!-- use this template for local run for proper stacktrace formatting in logs -->

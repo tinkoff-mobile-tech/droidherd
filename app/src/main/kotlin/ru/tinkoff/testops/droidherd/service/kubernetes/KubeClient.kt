@@ -6,6 +6,7 @@ import io.kubernetes.client.informer.SharedIndexInformer
 import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.openapi.apis.CoreV1Api
 import io.kubernetes.client.openapi.models.*
+import io.kubernetes.client.util.ModelMapper
 import io.kubernetes.client.util.Yaml
 import io.kubernetes.client.util.generic.KubernetesApiResponse
 import io.kubernetes.client.util.generic.options.CreateOptions
@@ -13,10 +14,7 @@ import io.kubernetes.client.util.generic.options.ListOptions
 import org.slf4j.LoggerFactory
 import ru.tinkoff.testops.droidherd.DroidherdCrdFileProvider
 import ru.tinkoff.testops.droidherd.api.*
-import ru.tinkoff.testops.droidherd.models.V1DroidherdSession
-import ru.tinkoff.testops.droidherd.models.V1DroidherdSessionSpecEmulators
-import ru.tinkoff.testops.droidherd.models.V1DroidherdSessionSpecParameters
-import ru.tinkoff.testops.droidherd.models.V1DroidherdSessionStatus
+import ru.tinkoff.testops.droidherd.models.*
 import ru.tinkoff.testops.droidherd.service.configs.DroidherdConfig
 import ru.tinkoff.testops.droidherd.service.models.DroidherdResource
 import ru.tinkoff.testops.droidherd.service.models.EmulatorsRequestData
@@ -45,6 +43,25 @@ class KubeClient(
             javaClass.getResource(path.substringAfter("classpath:"))?.readText()
                 ?: throw RuntimeException("Failed to read config: $path")
         else File(path).readText()
+    }
+
+    fun init(apiClient: ApiClient) {
+        // register explicitly due to model mapper issue with discovery from classpath
+        // which can reproduce if app running in fat jar
+        ModelMapper.addModelMap(
+            "apiextensions.k8s.io","v1", "customresourcedefinition",
+            "customresourcedefinitions", false,
+            V1CustomResourceDefinition::class.java, V1CustomResourceDefinitionList::class.java);
+        ModelMapper.addModelMap("testops.tinkoff.ru", "v1", "droidherdsession",
+            "droidherdsessions", false, V1DroidherdSession::class.java,
+            V1DroidherdSessionList::class.java);
+
+        if (config.applyCrdAtStartup) {
+            applyCrd(config, apiClient)
+        }
+        if (config.dryRun) {
+            dryRun()
+        }
     }
 
     fun dryRun() {
