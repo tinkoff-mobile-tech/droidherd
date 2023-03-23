@@ -5,13 +5,14 @@ plugins {
 allprojects {
     group = "$packageGroup"
     version = System.getenv("BUILD_VERSION") ?: "DEV-SNAPSHOT"
+
+    apply from: "${project.rootProject.projectDir}/repositories.gradle"
+    apply plugin: 'jacoco'
 }
 
 subprojects {
     apply plugin: 'java'
     apply plugin: 'io.spring.dependency-management'
-    apply plugin: 'jacoco'
-    apply from: '../repositories.gradle'
 
     java {
         toolchain {
