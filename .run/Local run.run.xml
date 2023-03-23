@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Local run" type="JetRunConfigurationType">
+    <option name="MAIN_CLASS_NAME" value="ru.tinkoff.testops.droidherd.spring.AppRunnerKt" />
+    <module name="droidherd-service.app.main" />
+    <shortenClasspath name="NONE" />
+    <option name="VM_PARAMETERS" value="-Dlogging.config=app/src/test/resources/logback-local.xml" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
