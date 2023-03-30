@@ -1,0 +1,9 @@
+FROM gcr.io/distroless/java:11
+
+COPY build/libs/droidherd-service.jar /app.jar
+EXPOSE 8080 8085
+CMD [ \
+    "-Dlogging.config=/config/logback.xml", \
+    "-Dconfig.file=/config/application.conf", \
+    "-Dspring.config.location=/config/application.yaml", \
+    "app.jar"]

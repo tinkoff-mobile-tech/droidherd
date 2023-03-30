@@ -1,5 +1,12 @@
 plugins {
     id "org.jetbrains.kotlin.jvm" version "$kotlinVersion" apply false
+    id 'io.codearte.nexus-staging' version '0.30.0'
+}
+
+nexusStaging {
+    username = System.getenv().getOrDefault("MVN_LOGIN", "")
+    password = System.getenv().getOrDefault("MVN_PASSWORD", "")
+    packageGroup = "ru.tinkoff"
 }
 
 allprojects {
@@ -56,8 +63,6 @@ subprojects {
             dependency "org.slf4j:slf4j-api:$slf4jVersion"
             dependency "io.mockk:mockk:$mockkVersion"
             dependency "io.kotest:kotest-assertions-core-jvm:$kotestVersion"
-            dependency "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
-            dependency "org.junit.jupiter:junit-jupiter-api:$junitVersion"
             dependency "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
             dependency "org.junit.jupiter:junit-jupiter-api:$junitVersion"
             dependency "org.springframework.security:spring-security-core:$springSecurityVersion"

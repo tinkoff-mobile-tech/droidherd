@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "droidherd-service.name" . }}
+  labels:
+    app: {{ template "droidherd-service.name" . }}
+    version: v1
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  replicas: {{ .Values.app.replicaCount }}
+  strategy:
+{{ toYaml .Values.strategy | indent 4 }}
+  selector:
+    matchLabels:
+      app: {{ template "droidherd-service.name" . }}
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: {{ template "droidherd-service.name" . }}
+        version: v1
+        app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+      annotations:
+        prometheus.io/path: "/system/prometheus"
+        prometheus.io/port: "8085"
+        prometheus.io/scrape: 'true'
+    spec:
+      restartPolicy: {{ .Values.restartPolicy }}
+      containers:
+        - name: {{ template "droidherd-service.name" . }}
+          securityContext:
+            privileged: true
+          image: "{{ .Values.app.image.name }}:{{ .Values.app.image.tag }}"
+          volumeMounts:
+            - name: droidherd-templates
+              mountPath: /operator
+              readOnly: true
+            - name: droidherd-config
+              mountPath: /config
+              readOnly: true
+  {{- if .Values.app.image.pullPolicy}}
+          imagePullPolicy: {{ .Values.app.image.pullPolicy }}
+  {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.app.service.port }}
+              protocol: TCP
+            - name: http-health
+              containerPort: {{ .Values.app.service.systemPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /system/health/liveness
+              port: http-health
+            initialDelaySeconds: 5
+            timeoutSeconds: 2
+            periodSeconds: 60
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /system/health/readiness
+              port: http-health
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 2
+            failureThreshold: 10
+          env:
+            - name: NAMESPACE
+              value: {{ .Release.Namespace | quote }}
+            - name: DROIDHERD_HOST
+              value: {{ template "droidherd-service.name" . }}-internal
+            - name: ENVIRONMENT
+              value: {{ .Values.environment | quote }}
+            - name: AUTH_SUPERUSER
+              value: {{ .Values.app.auth.superuser }}
+            - name: BASIC_AUTH_CREDENTIALS_PATH
+              value: /config/basic-auth.json
+      volumes:
+        - name: droidherd-templates
+          configMap:
+            name: droidherd-templates
+        - name: droidherd-config
+          configMap:
+            name: droidherd-config

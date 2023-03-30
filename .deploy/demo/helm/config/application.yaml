@@ -1,0 +1,38 @@
+spring:
+  main:
+    banner-mode: "off"
+  application:
+    name: droidherd-service
+
+server:
+  port: ${APP_PORT:8080}
+
+management:
+  server:
+    port: ${APP_SYSTEM_PORT:8085}
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+      base-path: /system
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    readinessstate:
+      enabled: true
+    livenessstate:
+      enabled: true
+
+logging.level:
+  org.zalando.logbook: TRACE
+  com.zaxxer.hikari.HikariConfig: INFO
+
+logbook:
+  format:
+    style: http
+  strategy: without-body
+  minimum-status: 200
+  exclude:
+    - /system/**

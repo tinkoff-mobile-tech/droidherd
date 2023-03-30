@@ -1,5 +1,8 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Local run" type="JetRunConfigurationType">
+    <envs>
+      <env name="BASIC_AUTH_CREDENTIALS_PATH" value=".deploy/demo/helm/config/basic-auth.json" />
+    </envs>
     <option name="MAIN_CLASS_NAME" value="ru.tinkoff.testops.droidherd.spring.AppRunnerKt" />
     <module name="droidherd-service.app.main" />
     <shortenClasspath name="NONE" />

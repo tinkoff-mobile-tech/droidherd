@@ -3,29 +3,33 @@ package ru.tinkoff.testops.droidherd.auth
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import com.typesafe.config.ConfigFactory
-import io.github.config4k.extract
 import org.springframework.boot.autoconfigure.AutoConfigureOrder
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 
 @Configuration
 @AutoConfigureOrder(Ordered.LOWEST_PRECEDENCE)
 @ConditionalOnMissingBean(value = [AuthService::class])
 open class BasicAuthServiceConfiguration {
-    @Bean
-    open fun basicAuthConfig(): BasicAuthConfig {
-        return ConfigFactory.load().extract("basicAuth")
+    companion object {
+        val CREDS_PATH = "BASIC_AUTH_CREDENTIALS_PATH"
+        val NOT_EXIST_PATH = "#not-exist#"
     }
 
     @Bean
-    open fun basicAuthClients(basicAuthConfig: BasicAuthConfig): Map<String, BasicAuthClient> {
+    open fun basicAuthClients(): Map<String, BasicAuthClient> {
+        val credentialsPath = System.getenv(CREDS_PATH) ?: NOT_EXIST_PATH
+        if (credentialsPath == NOT_EXIST_PATH || !Files.isRegularFile(Path.of(credentialsPath))) {
+            throw RuntimeException("No $CREDS_PATH env var specified or file not exist: $credentialsPath")
+        }
         return ObjectMapper()
             .registerKotlinModule()
-            .readValue<List<BasicAuthClient>>(File(basicAuthConfig.credentialsPath))
+            .readValue<List<BasicAuthClient>>(File(credentialsPath))
             .associateBy { it.client }
     }
 

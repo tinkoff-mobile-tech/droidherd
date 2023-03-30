@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "droidherd-service.name" . }}
+  labels:
+    app: {{ template "droidherd-service.name" . }}
+    service: {{ template "droidherd-service.name" . }}
+    version: v1
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  selector:
+    app: {{ template "droidherd-service.name" . }}
+    version: v1
+  type: NodePort
+  ports:
+    - name: http
+      port: {{ .Values.app.service.port }}

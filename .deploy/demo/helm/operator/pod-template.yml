@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{Name}}"
+  labels:
+    droidherdId: "{{Name}}"
+    droidherdSessionName: "{{DroidherdSessionName}}"
+    droidherdClientId: "{{ClientId}}"
+    droidherdSessionId: "{{SessionId}}"
+    image: "{{Image}}"
+  ownerReferences:
+    - apiVersion: testops.tinkoff.ru/v1
+      kind: DroidherdSession
+      name: "{{DroidherdSessionName}}"
+      uid: "{{UID}}"
+      blockOwnerDeletion: false
+spec:
+  automountServiceAccountToken: false
+  restartPolicy: Always
+  containers:
+    - name: emulator
+      image: "{{FullQualifiedImage}}"
+      securityContext:
+        privileged: true
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+        - mountPath: /dev/kvm
+          name: dev-kvm
+        - mountPath: /dev/shm
+          name: dev-shm
+        - name: emulators-config
+          mountPath: /emulator-startup-probe.sh
+          subPath: emulator-startup-probe.sh
+      ports:
+        - containerPort: 5555
+          name: tcp-adb
+          protocol: TCP
+      env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: ANDROID_AVD_HOME
+          value: "/android-home"
+        - name: EMULATOR_ID
+          value: '{{Name}}'
+        - name: CLIENT_ID
+          value: '{{ClientId}}'
+        - name: ANDROID_VERSION
+          value: '{{Image}}'
+        - name: DROIDHERD_HOST
+          value: '{{DroidherdHost}}'
+        - name: EMULATOR_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+      startupProbe:
+        exec:
+          command:
+            - /emulator-startup-probe.sh
+        initialDelaySeconds: 20
+        timeoutSeconds: 5
+        periodSeconds: 5
+        successThreshold: 1
+        failureThreshold: 30
+      resources:
+        requests:
+          cpu: 3000m
+          memory: 4Gi
+        limits:
+          cpu: 3000m
+  volumes:
+    - name: dev-kvm
+      hostPath:
+        path: /dev/kvm
+    - name: dev-shm
+      hostPath:
+        path: /dev/shm
+    - name: emulators-config
+      configMap:
+        name: emulators-config
+        defaultMode: 0777
+  terminationGracePeriodSeconds: 0
