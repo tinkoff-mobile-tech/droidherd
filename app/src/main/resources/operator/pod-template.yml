@@ -37,8 +37,6 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        - name: EMULATOR_ARGS
-          value: "{{EmulatorArgs}}"
         - name: EMULATOR_ID
           value: '{{Name}}'
         - name: CLIENT_ID

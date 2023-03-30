@@ -189,7 +189,7 @@ class KubeClient(
 
     fun createPod(templateParameters: TemplateParameters): V1Pod {
         val pod = loadYamlAs(podYaml, templateParameters.asMap, V1Pod::class.java)
-        log.debug("creating pod {}", pod)
+        log.debug("creating pod {}, template parameters {}", pod, templateParameters.asMap)
 
         return coreApi.createNamespacedPod(
             config.namespace, pod,

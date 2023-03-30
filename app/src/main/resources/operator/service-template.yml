@@ -20,6 +20,6 @@ spec:
     droidherdSessionName: "{{DroidherdSessionName}}"
   type: NodePort
   ports:
-    - port: {{Port}}
+    - port: 5555
       name: tcp-adb
       protocol: TCP
