@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pod-reader
+rules:
+  - apiGroups: ["", "extensions", "apps"]
+    resources: ["pods", "services", "deployments", "gateways", "virtualservices", "endpoints"]
+    verbs: ["*"]
+  - apiGroups: ["testops.tinkoff.ru"]
+    resources: ["droidherdsession", "droidherdsessions", "droidherdsessions/status"]
+    verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: default-pod-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: pod-reader
+subjects:
+  - kind: ServiceAccount
+    name: default

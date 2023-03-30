@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: droidherd-templates
+  labels:
+    chart: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+data:
+  crd-template.yml: |
+{{ .Files.Get "operator/crd-template.yml" | indent 4 }}
+  pod-template.yml: |
+{{ .Files.Get "operator/pod-template.yml" | indent 4 }}
+  service-template.yml: |
+{{ .Files.Get "operator/service-template.yml" | indent 4 }}

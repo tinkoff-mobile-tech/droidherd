@@ -2,12 +2,11 @@
     {
         "client": "droidherd-default",
         "password": "",
-        "info": "Default droidherd client for test"
+        "info": "Default droidherd client for demo purposes"
     },
     {
         "client": "fork-client-1",
-        "password": "test",
-        "info": "Client for test"
+        "password": "test"
     },
     {
         "client": "fork-client-2",

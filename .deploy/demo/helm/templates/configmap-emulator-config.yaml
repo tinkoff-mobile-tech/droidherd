@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: emulators-config
+data:
+  emulator-startup-probe.sh: |
+{{ tpl (.Files.Get "resources/emulator-startup-probe.sh") . | indent 4 }}

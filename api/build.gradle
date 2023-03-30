@@ -1,15 +1,14 @@
 apply plugin: "java-library"
 apply plugin: "maven-publish"
+apply plugin: "signing"
+
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
 
 publishing {
-    publications {
-        maven(MavenPublication) {
-            groupId = 'ru.tinkoff.testops.droidherd'
-            artifactId = 'api'
-            version = this.version.toString()
-            from components.java
-        }
-    }
     repositories {
         maven {
             def stub = "https://nexus-stub.com"
@@ -21,4 +20,51 @@ publishing {
             }
         }
     }
+
+    publications {
+        release(MavenPublication) {
+            groupId = "$packageGroup"
+            artifactId = project.name
+
+            from(project.components.java)
+
+            pom {
+                name = project.name
+                packaging = 'jar'
+                description = 'Droidherd-service $project.name module'
+                url = POM_URL
+
+                scm {
+                    url = POM_SCM_URL
+                    connection = POM_SCM_CONNECTION
+                    developerConnection = POM_SCM_DEV_CONNECTION
+                }
+
+                licenses {
+                    license {
+                        name = POM_LICENCE_NAME
+                        url = POM_LICENCE_URL
+                        distribution = POM_LICENCE_DIST
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = POM_DEVELOPER_ID
+                        name = POM_DEVELOPER_NAME
+                    }
+                }
+
+                withXml {
+                    Node pomNode = asNode()
+                    pomNode.remove(pomNode.dependencyManagement)
+                }
+            }
+        }
+    }
+}
+
+signing {
+    required = false
+    sign publishing.publications.release
 }
