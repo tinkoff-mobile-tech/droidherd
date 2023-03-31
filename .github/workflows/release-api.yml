@@ -44,22 +44,22 @@ jobs:
       - name: Build
         run: ./gradlew assemble test
 
-#      - name: Generate sign key for publishing
-#        env:
-#          GPG_KEY: ${{ secrets.GPG_KEY }}
-#          SIGN_OSSRH_GRADLE_PROPERTIES: ${{ secrets.SIGN_OSSRH_GRADLE_PROPERTIES }}
-#        run: |
-#          echo "$GPG_KEY" | base64 --decode > /tmp/secring.gpg
-#          mkdir -p ~/.gradle
-#          echo -en "$SIGN_OSSRH_GRADLE_PROPERTIES" > ~/.gradle/gradle.properties
-#
-#      - name: Execute Gradle publish
-#        uses: gradle/gradle-build-action@v2
-#        with:
-#          arguments: :api:publish -Psigning.secretKeyRingFile=/tmp/secring.gpg
-#        env:
-#          MVN_RELEASE_REPOSITORY: https://oss.sonatype.org/service/local/staging/deploy/maven2/
-#
+      - name: Generate sign key for publishing
+        env:
+          GPG_KEY: ${{ secrets.GPG_KEY }}
+          SIGN_OSSRH_GRADLE_PROPERTIES: ${{ secrets.SIGN_OSSRH_GRADLE_PROPERTIES }}
+        run: |
+          echo "$GPG_KEY" | base64 --decode > /tmp/secring.gpg
+          mkdir -p ~/.gradle
+          echo -en "$SIGN_OSSRH_GRADLE_PROPERTIES" > ~/.gradle/gradle.properties
+
+      - name: Execute Gradle publish
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: :api:publish -Psigning.secretKeyRingFile=/tmp/secring.gpg
+        env:
+          MVN_RELEASE_REPOSITORY: https://oss.sonatype.org/service/local/staging/deploy/maven2/
+
 #      - name: Execute Gradle nexus staging release
 #        uses: gradle/gradle-build-action@v2
 #        with:
