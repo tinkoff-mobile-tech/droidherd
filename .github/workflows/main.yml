@@ -2,7 +2,7 @@ name: Building, testing and assembling jar-file
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "build-docker" ]
   pull_request:
   workflow_dispatch:
 
@@ -21,10 +21,13 @@ jobs:
         run: ./gradlew build test bootJar
 
       - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKER_REPOSITORY_PASSWORD }}" | docker login -u $DOCKER_REPOSITORY --password-stdin
+        run: |
+          docker login -u $DOCKER_REPOSITORY -p ${{ secrets.DOCKER_REPOSITORY_PASSWORD }}
 
       - name: Build Docker Image
-        run: docker build ./app --file ./app/OssDockerfile --tag $DOCKER_REPOSITORY/testops/droidherd:latest
+        run: |
+          docker build ./app --file ./app/OssDockerfile --tag $DOCKER_REPOSITORY/droidherd:latest
 
       - name: Push Image to Docker Hub
-        run: docker push $DOCKER_REPOSITORY/testops/droidherd:latest
+        run: |
+          docker push $DOCKER_REPOSITORY/droidherd:latest
