@@ -1,15 +1,14 @@
-name: Release Droidherd API
-
-on:
-  push:
-    branches: [ "main", "build-docker" ]
+name: Release Droidherd
 
 #on:
-#  release:
-#    types: [created, workflow_dispatch]
+#  push:
+#    branches: [ "main", "build-docker" ]
+
+on:
+  release:
+    types: [created, workflow_dispatch]
 
 env:
-  MY_GITHUB_REF_NAME: "release-0.0.1"
   MVN_LOGIN: ${{ secrets.NEXUS_LOGIN }}
   MVN_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
   DOCKER_REPOSITORY: ${{secrets.DOCKER_REPOSITORY}}
@@ -25,7 +24,7 @@ jobs:
 
       - name: Set build version
         run: |
-          echo "BUILD_VERSION=$(echo $MY_GITHUB_REF_NAME | grep -Eo '[0-9]\.[0-9]+\.[0-9]+')" >> $GITHUB_ENV
+          echo "BUILD_VERSION=$(echo $GITHUB_REF_NAME | grep -Eo '[0-9]\.[0-9]+\.[0-9]+')" >> $GITHUB_ENV
 
       - name: Show and check version
         run: |
@@ -61,16 +60,17 @@ jobs:
         env:
           MVN_RELEASE_REPOSITORY: https://oss.sonatype.org/service/local/staging/deploy/maven2/
 
-#      - name: Execute Gradle nexus staging release
-#        uses: gradle/gradle-build-action@v2
-#        with:
-#          arguments: closeAndReleaseRepository
-#        env:
-#          MVN_RELEASE_REPOSITORY: https://oss.sonatype.org/service/local/
+      - name: Execute Gradle nexus staging release
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: closeAndReleaseRepository
+        env:
+          MVN_RELEASE_REPOSITORY: https://oss.sonatype.org/service/local/
 
       - name: Docker build and push
         run: |
           echo '${{ secrets.DOCKER_REPOSITORY_PASSWORD }}' | docker login -u $DOCKER_REPOSITORY --password-stdin
           docker build ./app --file ./app/OssDockerfile --tag $DOCKER_REPOSITORY/droidherd:${BUILD_VERSION}
           docker tag $DOCKER_REPOSITORY/droidherd:${BUILD_VERSION} $DOCKER_REPOSITORY/droidherd:latest
+          echo "Update latest tag $DOCKER_REPOSITORY/droidherd"  
           docker push $DOCKER_REPOSITORY/droidherd:latest
