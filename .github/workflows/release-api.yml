@@ -19,7 +19,7 @@ jobs:
 
       - name: Set build version
         run: |
-          echo "BUILD_VERSION=$(echo "$GITHUB_REF_NAME" | grep -Eo '[0-9]\.[0-9]+\.[0-9]+') >> $GITHUB_ENV
+          echo "BUILD_VERSION=$(echo $GITHUB_REF_NAME | grep -Eo '[0-9]\.[0-9]+\.[0-9]+')" >> $GITHUB_ENV
           echo "Evaluated version: [$BUILD_VERSION]"
           [ -z "$BUILD_VERSION" ] && exit 1
 
