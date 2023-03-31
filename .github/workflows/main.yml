@@ -1,4 +1,4 @@
-name: Building, testing and assembling jar-file
+name: Build and test
 
 on: [ push ]
 
