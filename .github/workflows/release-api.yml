@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check repository and tag
-        run: ./github/scripts/release-env-check.sh
+        run: ./.github/scripts/release-env-check.sh
 
       - name: Set build version
         run: |
