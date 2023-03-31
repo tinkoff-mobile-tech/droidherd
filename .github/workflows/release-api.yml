@@ -14,7 +14,6 @@ jobs:
     steps:
       - name: Check repository
         run: |
-          echo ${GITHUB_REPOSITORY}
           [[ "${GITHUB_REPOSITORY}" != "tinkoff-mobile-tech/droidherd" ]] && exit 1
 
       - name: Check release tag
