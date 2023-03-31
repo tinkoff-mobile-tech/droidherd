@@ -9,17 +9,6 @@ of the following functionality:
 - quotas for clients
 - API to be able to customize running emulators for each client
 
-## How to run
-
-Demo helm template with all required configuration placed in demo folder.
-
-[README](.deploy/demo/helm/README.md) contains additional details how to install it.
-
-Be aware that android emulators itself are not a part of the service — you can use any ones which you found or developed by yourself.
-For demo purposes service use google android images.
-
-### Local
-
 ## How it works
 Service contains 2 main components: rest controller to serve API requests from clients (and admin) and operator.
 
