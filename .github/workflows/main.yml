@@ -2,9 +2,6 @@ name: Building, testing and assembling jar-file
 
 on: [ push ]
 
-env:
-  DOCKER_REPOSITORY: ${{secrets.DOCKER_REPOSITORY}}
-
 jobs:
   gradle:
     runs-on: ubuntu-latest
