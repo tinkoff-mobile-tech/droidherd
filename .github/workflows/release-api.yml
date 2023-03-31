@@ -68,11 +68,9 @@ jobs:
 #        env:
 #          MVN_RELEASE_REPOSITORY: https://oss.sonatype.org/service/local/
 
-      - name: Docker login
-        run: echo '${{ secrets.DOCKER_REPOSITORY_PASSWORD }}' | docker login -u $DOCKER_REPOSITORY --password-stdin
-
       - name: Docker build and push
         run: |
+          echo '${{ secrets.DOCKER_REPOSITORY_PASSWORD }}' | docker login -u $DOCKER_REPOSITORY --password-stdin
           docker build ./app --file ./app/OssDockerfile --tag $DOCKER_REPOSITORY/droidherd:${BUILD_VERSION}
           docker tag $DOCKER_REPOSITORY/droidherd:${BUILD_VERSION} $DOCKER_REPOSITORY/droidherd:latest
           docker push $DOCKER_REPOSITORY/droidherd:latest
