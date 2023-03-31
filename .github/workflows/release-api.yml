@@ -21,8 +21,8 @@ jobs:
         run: |
           export MY_GITHUB_REF_NAME="release-0.2.3"
           echo "BUILD_VERSION=$(echo $MY_GITHUB_REF_NAME | grep -Eo '[0-9]\.[0-9]+\.[0-9]+')" >> $GITHUB_ENV
-          echo "Evaluated version: [$BUILD_VERSION]"
-          [ -z "$BUILD_VERSION" ] && exit 1
+          echo "Evaluated version: [$env.BUILD_VERSION]"
+          [ -z "$env.BUILD_VERSION" ] && exit 1
 
 #      - uses: actions/checkout@v3
 #
