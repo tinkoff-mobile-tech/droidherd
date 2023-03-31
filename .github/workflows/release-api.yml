@@ -8,6 +8,11 @@ on:
 #  release:
 #    types: [created, workflow_dispatch]
 
+env:
+  MY_GITHUB_REF_NAME: "release-0.0.2"
+  MVN_LOGIN: ${{ secrets.NEXUS_LOGIN }}
+  MVN_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+
 jobs:
   publish-api-to-maven-repo:
     runs-on: ubuntu-latest
@@ -19,51 +24,53 @@ jobs:
 
       - name: Set build version
         run: |
-          export MY_GITHUB_REF_NAME="release-0.2.3"
           echo "BUILD_VERSION=$(echo $MY_GITHUB_REF_NAME | grep -Eo '[0-9]\.[0-9]+\.[0-9]+')" >> $GITHUB_ENV
 
-      - name: Show version
+      - name: Show and check version
         run: |
           echo "Evaluated version: [$BUILD_VERSION]"
+          if [[ -z "$BUILD_VERSION" ]] then exit 1; fi
 
-#      - uses: actions/checkout@v3
-#
-#      - name: Set up JDK 11
-#        uses: actions/setup-java@v3
-#        with:
-#          java-version: '11'
-#          distribution: 'temurin'
-#          cache: gradle
-#
-#      - name: Validate Gradle wrapper
-#        uses: gradle/wrapper-validation-action@v1
-#
-#      - name: Retrieve the secret and decode it to a file
-#        env:
-#          GPG_KEY: ${{ secrets.GPG_KEY }}
-#        run: echo "$GPG_KEY" | base64 --decode > /tmp/secring.gpg
-#
-#      - name: Retrieve the gradle.properties
-#        env:
-#          SIGN_OSSRH_GRADLE_PROPERTIES: ${{ secrets.SIGN_OSSRH_GRADLE_PROPERTIES }}
-#        run: |
-#          mkdir -p ~/.gradle
-#          echo -en "$SIGN_OSSRH_GRADLE_PROPERTIES" > ~/.gradle/gradle.properties
-#
-#      - name: Execute Gradle publish
-#        uses: gradle/gradle-build-action@v2
-#        with:
-#          arguments: :api:publish -Psigning.secretKeyRingFile=/tmp/secring.gpg
-#        env:
-#          MVN_RELEASE_REPOSITORY: https://oss.sonatype.org/service/local/staging/deploy/maven2/
-#          MVN_LOGIN: ${{ secrets.NEXUS_LOGIN }}
-#          MVN_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-#
-#      - name: Execute Gradle nexus staging release
-#        uses: gradle/gradle-build-action@v2
-#        with:
-#          arguments: closeAndReleaseRepository
-#        env:
-#          MVN_RELEASE_REPOSITORY: https://oss.sonatype.org/service/local/
-#          MVN_LOGIN: ${{ secrets.NEXUS_LOGIN }}
-#          MVN_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Build
+        run: ./gradlew assemble test
+
+      - name: Generate sign key for publishing
+        env:
+          GPG_KEY: ${{ secrets.GPG_KEY }}
+          SIGN_OSSRH_GRADLE_PROPERTIES: ${{ secrets.SIGN_OSSRH_GRADLE_PROPERTIES }}
+        run: |
+          echo "$GPG_KEY" | base64 --decode > /tmp/secring.gpg
+          mkdir -p ~/.gradle
+          echo -en "$SIGN_OSSRH_GRADLE_PROPERTIES" > ~/.gradle/gradle.properties
+
+      - name: Execute Gradle publish
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: :api:publish -Psigning.secretKeyRingFile=/tmp/secring.gpg
+        env:
+          MVN_RELEASE_REPOSITORY: https://oss.sonatype.org/service/local/staging/deploy/maven2/
+
+      - name: Execute Gradle nexus staging release
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: closeAndReleaseRepository
+        env:
+          MVN_RELEASE_REPOSITORY: https://oss.sonatype.org/service/local/
+
+      - name: Build and push docker
+        run: |
+          echo '${{ secrets.DOCKER_REPOSITORY_PASSWORD }}' | docker login -u $DOCKER_REPOSITORY --password-stdin
+          docker build ./app --file ./app/OssDockerfile --tag $DOCKER_REPOSITORY/droidherd:${BUILD_VERSION}
+          docker push $DOCKER_REPOSITORY/droidherd:${BUILD_VERSION}
+          docker tag $DOCKER_REPOSITORY/droidherd:${BUILD_VERSION} $DOCKER_REPOSITORY/droidherd:latest
+          docker push $DOCKER_REPOSITORY/droidherd:latest
