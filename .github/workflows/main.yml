@@ -22,14 +22,3 @@ jobs:
 
       - name: Build, test and assemble jar
         run: ./gradlew build test bootJar
-
-      - name: Docker login
-        run: echo '${{ secrets.DOCKER_REPOSITORY_PASSWORD }}' | docker login -u $DOCKER_REPOSITORY --password-stdin
-
-      - name: Build Docker Image
-        run: |
-          docker build ./app --file ./app/OssDockerfile --tag $DOCKER_REPOSITORY/droidherd:latest
-
-      - name: Push Image to Docker Hub
-        run: |
-          docker push $DOCKER_REPOSITORY/droidherd:latest
