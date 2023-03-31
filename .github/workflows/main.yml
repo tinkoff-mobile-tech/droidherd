@@ -1,10 +1,6 @@
 name: Building, testing and assembling jar-file
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-  workflow_dispatch:
+on: [ push ]
 
 env:
   DOCKER_REPOSITORY: ${{secrets.DOCKER_REPOSITORY}}
