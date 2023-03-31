@@ -12,8 +12,10 @@ jobs:
   publish-api-to-maven-repo:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
+
       - name: Check repository and tag
-        run: scripts/release-env-check.sh
+        run: .github/scripts/release-env-check.sh
 
       - name: Set build version
         run: |
