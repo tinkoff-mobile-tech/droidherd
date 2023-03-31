@@ -13,6 +13,7 @@ jobs:
   gradle:
     runs-on: ubuntu-latest
     steps:
+
       - name: Docker login
         run: echo '${{ secrets.DOCKER_REPOSITORY_PASSWORD }}' | docker login -u $DOCKER_REPOSITORY --password-stdin
 
