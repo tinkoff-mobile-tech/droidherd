@@ -5,7 +5,6 @@ on:
     types: [created, workflow_dispatch]
 
 jobs:
-  with:
   publish-api-to-maven-repo:
     runs-on: ubuntu-latest
     steps:
