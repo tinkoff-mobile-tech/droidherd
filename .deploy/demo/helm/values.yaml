@@ -12,8 +12,8 @@ app:
   component: "emulator"
   replicaCount: 1
   image:
-    name: localhost:5000/droidherd-service
-    tag: local
+    name: tinkoffcreditsystems/droidherd
+    tag: latest
     pullPolicy: "Always"
   service:
     port: 8080
