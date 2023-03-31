@@ -14,4 +14,4 @@ jobs:
           java-version: 11
 
       - name: Build, test and assemble jar
-        run: ./gradlew build test bootJar
+        run: ./gradlew assemble test
