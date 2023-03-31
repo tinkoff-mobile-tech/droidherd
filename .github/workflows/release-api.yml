@@ -12,14 +12,12 @@ jobs:
   publish-api-to-maven-repo:
     runs-on: ubuntu-latest
     steps:
-      - name: Check repository
+      - name: Check repository and tag
         run: |
-          [[ "${GITHUB_REPOSITORY}" != "tinkoff-mobile-tech/droidherd" ]] && exit 1
-
-      - name: Check release tag
-        run: |
+          echo ${GITHUB_REPOSITORY}
           echo ${GITHUB_REF_NAME}
-          [ "${GITHUB_REF_NAME}" =~ ^release-[0-9]+\.[0-9]+\.[0-9]+$ ] || exit 1
+          [[ "${GITHUB_REPOSITORY}" != "tinkoff-mobile-tech/droidherd" ]] && exit 1
+          [[ "${GITHUB_REF_NAME}" =~ ^release-[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
 
       - name: Set build version
         run: |
