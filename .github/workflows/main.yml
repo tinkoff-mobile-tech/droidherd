@@ -8,7 +8,6 @@ on:
 
 env:
   DOCKER_REPOSITORY: ${{secrets.DOCKER_REPOSITORY}}
-  DOCKER_PASSWORD: ${{secrets.DOCKER_REPOSITORY_PASSWORD}}
 
 jobs:
   gradle:
@@ -26,7 +25,8 @@ jobs:
 
 
       - name: Docker login
-        run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+        run: |
+          echo "${{ secrets.DOCKER_REPOSITORY_PASSWORD }}" | docker login -u $DOCKER_REPOSITORY --password-stdin
 
       - name: Build Docker Image
         run: |
