@@ -6,6 +6,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+env:
+  DOCKER_REPOSITORY: ${{secrets.DOCKER_REPOSITORY}}
+  DOCKER_PASSWORD: ${{secrets.DOCKER_REPOSITORY_PASSWORD}}
+
 jobs:
   gradle:
     runs-on: ubuntu-latest
@@ -20,9 +24,9 @@ jobs:
       - name: Build, test and assemble jar
         run: ./gradlew build test bootJar
 
-      - name: Login to Docker Hub
-        run: |
-          docker login -u $DOCKER_REPOSITORY -p "${{ secrets.DOCKER_REPOSITORY_PASSWORD }}"
+
+      - name: Docker login
+        run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
 
       - name: Build Docker Image
         run: |
