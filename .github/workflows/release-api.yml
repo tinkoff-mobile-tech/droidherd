@@ -9,7 +9,7 @@ on:
 #    types: [created, workflow_dispatch]
 
 env:
-  MY_GITHUB_REF_NAME: "release-0.0.2"
+  MY_GITHUB_REF_NAME: "release-0.0.1"
   MVN_LOGIN: ${{ secrets.NEXUS_LOGIN }}
   MVN_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
 
@@ -44,33 +44,32 @@ jobs:
       - name: Build
         run: ./gradlew assemble test
 
-      - name: Generate sign key for publishing
-        env:
-          GPG_KEY: ${{ secrets.GPG_KEY }}
-          SIGN_OSSRH_GRADLE_PROPERTIES: ${{ secrets.SIGN_OSSRH_GRADLE_PROPERTIES }}
-        run: |
-          echo "$GPG_KEY" | base64 --decode > /tmp/secring.gpg
-          mkdir -p ~/.gradle
-          echo -en "$SIGN_OSSRH_GRADLE_PROPERTIES" > ~/.gradle/gradle.properties
-
-      - name: Execute Gradle publish
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: :api:publish -Psigning.secretKeyRingFile=/tmp/secring.gpg
-        env:
-          MVN_RELEASE_REPOSITORY: https://oss.sonatype.org/service/local/staging/deploy/maven2/
-
-      - name: Execute Gradle nexus staging release
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: closeAndReleaseRepository
-        env:
-          MVN_RELEASE_REPOSITORY: https://oss.sonatype.org/service/local/
+#      - name: Generate sign key for publishing
+#        env:
+#          GPG_KEY: ${{ secrets.GPG_KEY }}
+#          SIGN_OSSRH_GRADLE_PROPERTIES: ${{ secrets.SIGN_OSSRH_GRADLE_PROPERTIES }}
+#        run: |
+#          echo "$GPG_KEY" | base64 --decode > /tmp/secring.gpg
+#          mkdir -p ~/.gradle
+#          echo -en "$SIGN_OSSRH_GRADLE_PROPERTIES" > ~/.gradle/gradle.properties
+#
+#      - name: Execute Gradle publish
+#        uses: gradle/gradle-build-action@v2
+#        with:
+#          arguments: :api:publish -Psigning.secretKeyRingFile=/tmp/secring.gpg
+#        env:
+#          MVN_RELEASE_REPOSITORY: https://oss.sonatype.org/service/local/staging/deploy/maven2/
+#
+#      - name: Execute Gradle nexus staging release
+#        uses: gradle/gradle-build-action@v2
+#        with:
+#          arguments: closeAndReleaseRepository
+#        env:
+#          MVN_RELEASE_REPOSITORY: https://oss.sonatype.org/service/local/
 
       - name: Build and push docker
         run: |
           echo '${{ secrets.DOCKER_REPOSITORY_PASSWORD }}' | docker login -u $DOCKER_REPOSITORY --password-stdin
           docker build ./app --file ./app/OssDockerfile --tag $DOCKER_REPOSITORY/droidherd:${BUILD_VERSION}
-          docker push $DOCKER_REPOSITORY/droidherd:${BUILD_VERSION}
           docker tag $DOCKER_REPOSITORY/droidherd:${BUILD_VERSION} $DOCKER_REPOSITORY/droidherd:latest
           docker push $DOCKER_REPOSITORY/droidherd:latest
