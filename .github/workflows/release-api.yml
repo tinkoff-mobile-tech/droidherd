@@ -12,6 +12,7 @@ env:
   MY_GITHUB_REF_NAME: "release-0.0.1"
   MVN_LOGIN: ${{ secrets.NEXUS_LOGIN }}
   MVN_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+  DOCKER_REPOSITORY: ${{secrets.DOCKER_REPOSITORY}}
 
 jobs:
   publish-api-to-maven-repo:
