@@ -14,18 +14,32 @@ testing. But droidherd-service currently cannot refresh configuration on fly so 
 
 Use local-install.sh script as template and configure required values in values.yaml.
 
+Installation can be done by script [local-install.sh](local-install.sh).
+
+Or step by step manually:
+
 Before install also need to apply CRD for cluster, it is placed crd-model:
 
 ```bash
-kubectl apply -f crd-model/src/main/crd/testops.tinkoff.ru_droidherdsessions.yaml
+kubectl apply -f ../../../crd-model/src/main/crd/testops.tinkoff.ru_droidherdsessions.yaml
+```
+
+Install helm chart:
+```bash
+helm helm -n droidherd-service upgrade --install droidherd-service .
+```
+
+Grep service port to generate service URL:
+```bash
+kubectl get service -n droidherd-service
 ```
 
 ## How to use
 
-Swagger:
+Swagger: [/swagger-ui.html](http://localhost:8080/swagger-ui.html).
 
-By default basic-auth provided with several test clients.
-They are placed in config/basic-auth.json file.
+Basic-auth provided with several test clients.
+They are placed in [basic-auth.json](cofig/basic-auth.json) file.
 
 Client id 'droidherd-default' available to use without password.
 
@@ -57,5 +71,6 @@ It its caused because CRD is not installed.
 
 Install CRD which is placed in crd-model to your cluster.
 ```bash
+# run from from repository root
 kubectl apply -f crd-model/src/main/crd/testops.tinkoff.ru_droidherdsessions.yaml
 ```
