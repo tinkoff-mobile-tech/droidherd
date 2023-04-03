@@ -9,17 +9,12 @@ of the following functionality:
 - quotas for clients
 - API to be able to customize running emulators for each client
 
-Android emulators itself are not a part of the service — you can use any ones which you found or developed by yourself.
-
-For demo purposes you can try to use google android images. 
-More details see in [demo helm template](.deploy/demo/helmREADME.md).
-
 ## How it works
 Service contains 2 main components: rest controller to serve API requests from clients (and admin) and operator.
 
 Clients make requests to the service using API to get the required number of android emulators having specified versions.
 
-Service works as a k8s operator: each request transforms to the CRD (Custom Resource Definition) and then service works with CRD to reach desired state (run required emulators).
+Service works as a k8s operator: each session request [transforms to the CRD](crd-model/src/main/crd/testops.tinkoff.ru_droidherdsessions.yaml) (Custom Resource Definition) and then service works with CRD to reach desired state (run required emulators).
 
 Service is cloud-native and supports multiple replicas. Also, it supports quota for clients and sessions, so clients can create multiple sessions — service
 will monitor quota usage and restrict quota exceeding.
@@ -32,20 +27,33 @@ So if you want to run another one service in parallel you just need to deploy it
 to separate NS and configure to use.
 
 But CRD is not namespaced - they are global. If you want to change it - you must create new version of resource instead
-change existing to avoid conflicts with runtime CRD.
+change existing to avoid conflicts with runtime CRD. It is not service requirement - it is design rule for any CRD in k8s. 
 
 ### Android emulator readiness
 
-Readiness of emulator is important part of service because if emulator is not loaded even if adb allow to connect to it
-any communication with them is undefined and at mostly cases leads to errors.
+Readiness of emulator is important part of service because if emulator failed to start even if adb allow to connect to it
+any communication with them is undefined and at mostly cases leads to errors on client.
 
 But service doesn't cover logic to check that emulator is ready.
 
 By service design it should be done by k8s probes which can be configured in pod template yaml in configuration.
 
+[Example](.deploy/demo/helm/resources/emulator-startup-probe.sh) of readiness script provided with demo helm template.
+
 ## Clients API
 
 See the Swagger documentation at `/swagger-ui.html`.
+
+### Java API
+
+Java API models can be found in [api module](api/src/main/java/ru/tinkoff/testops/droidherd/api/SessionRequest.java)
+
+For java clients API is published to public maven oss repository and you add dependency to your build:
+```text
+ru.tinkoff.testops.droidherd:api:1.0.0
+```
+
+Example of using API you can find in [droidherd-fork](https://github.com/tinkoff-mobile-tech/fork) test runner.
 
 ## Configuration
 
@@ -69,13 +77,33 @@ AuthService interface. Check out basic-auth module as example.
 
 First thing you need to run the service — kubernetes cluster. Without it Droidherd service will fail at startup during 
 the dry run stage. 
+
 You can disable dry run (see [Configuration](#configuration)), **but we highly recommend not to do this**.
 
-In repository you can find local-run-starter.sh script to run service from command line.
-Also, we provide intellij idea run configuration.
+Alternative way to run service locally without android emulators (described below).
 
-By default local run use configuration from classpath and for testing purposes
-instead emulators run echo-servers.
+### Demo helm template
+
+Demo helm template with all required configuration placed in [demo](.deploy/demo/helm/Chart.yaml) folder.
+
+[README](.deploy/demo/helm/README.md) contains additional details how to install it.
+
+Be aware that android emulators itself are not a part of the service — you can use anyone 
+which you found or developed by yourself.
+
+For demo purposes service use [android images](https://github.com/google/android-emulator-container-scripts) developed by google.
+
+### Local run
+
+By default embedded configuration in classpath contains echo-server instead android emulator images.
+
+In mostly cases if you want to test and debug service - you don't need android images which is require a lot of resources.
+
+In repository you can find [local-run-starter.sh](local-run-starter.sh) script to run service from command line.
+This script use configuration from demo help template. Override it in script if required.
+
+Also, we provide intellij idea run configuration (inside .run folder).
+
 
 ### Pitfalls
 
@@ -117,7 +145,7 @@ Service template can be extended to provide additional ports which you want to o
 Droidherd API provides in session status extraUris attributes which is map all extra service ports by their name. 
 
 To pass parameters from client use 'emulatorParameters' attribute
-(details you can find in SessionRequest.java inside API module).
+(details you can find in [api module](api/src/main/java/ru/tinkoff/testops/droidherd/api/Emulator.java)).
 
 Each parameter mapped to 'EMULATOR_${KEY}' = value and pass as is to pod template.
 
@@ -141,7 +169,7 @@ Once you got env variable - you can use it inside your emulator startup script a
 
 ## Contributing
 
-See our [CONTRIBUTING.md](CONTRIBUTING.md) guide
+See our [CONTRIBUTING.md](CONTRIBUTING.md) guide.
 
 ## License
 
@@ -149,4 +177,4 @@ See our [CONTRIBUTING.md](CONTRIBUTING.md) guide
 
 All DroidHerd components are covered by [Apache 2.0](LICENSE)
 
-Read more about this license [here](https://choosealicense.com/licenses/apache-2.0/)
+Read more about this license [here](https://choosealicense.com/licenses/apache-2.0/).
